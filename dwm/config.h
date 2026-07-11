@@ -161,15 +161,15 @@ static const Key keys[] = {
     {MODKEY | ShiftMask,                 XK_q,            killclient,       {.ui = 1}},          // Kill unfocused windows
     {MODKEY | ControlMask,               XK_x,            xrdb,             {.v = NULL}},        // Refresh Xrdb Colours
     {MODKEY,                             XK_f,            togglefullscreen, {0}},                // Toggle Fulscreen
-    {MODKEY,                             XK_k,            setlayout,        {.v = &layouts[1]}}, // Tile Layout
-    {MODKEY | ShiftMask | ControlMask,   XK_k,            setlayout,        {.v = &layouts[2]}}, // Monocle Layout
-    {MODKEY | ShiftMask,                 XK_k,            setlayout,        {.v = &layouts[3]}}, // Spiral Layout
-    {MODKEY | ControlMask,               XK_k,            setlayout,        {.v = &layouts[4]}}, // Dwindle Layout
-    {MODKEY | ControlMask,               XK_space,        setlayout,        {0}},                // Default Layout
+//  {MODKEY,                             XK_k,            setlayout,        {.v = &layouts[1]}}, // Tile Layout
+//  {MODKEY | ShiftMask | ControlMask,   XK_k,            setlayout,        {.v = &layouts[2]}}, // Monocle Layout
+//  {MODKEY | ShiftMask,                 XK_k,            setlayout,        {.v = &layouts[3]}}, // Spiral Layout
+//  {MODKEY | ControlMask,               XK_k,            setlayout,        {.v = &layouts[4]}}, // Dwindle Layout
+//  {MODKEY | ControlMask,               XK_space,        setlayout,        {0}},                // Default Layout
     {MODKEY | ShiftMask,                 XK_space,        togglefloating,   {0}},                // Floating Window
     {MODKEY,                             XK_space,        zoom,             {0}},                // Zoom?
     {MODKEY | ControlMask,               XK_space,        focusmaster,      {0}},                // Focus on master
-    {MODKEY | ControlMask | ShiftMask,   XK_s,            togglesticky,     {0}},                // Make window follow trough tabs
+    {MODKEY | ControlMask | ShiftMask,   XK_l,            togglesticky,     {0}},                // Make window follow trough tabs
     // Multi monitor control
     {MODKEY,                             XK_bracketright, focusmon,         {.i = -1}},          // idk
     {MODKEY | ShiftMask,                 XK_bracketright, tagmon,           {.i = -1}},          // idk
