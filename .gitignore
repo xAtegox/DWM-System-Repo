@@ -1,11 +1,11 @@
 # =====================================================
-# Unified .gitignore — dotfiles / dwm / dwmblocks / st / slock / Zed
+# Unified .gitignore — dotfiles / dwm / Dwmblocks / St / slock / Zed
 # =====================================================
 
 # ---------- Secrets ----------
-**/gh/.config/hosts.yml
-gh/.config/gh
-gh/.config/gh/hosts.yml
+dotfiles/**/gh/.config/hosts.yml
+dotfiles/gh/.config/gh
+dotfiles/gh/.config/gh/hosts.yml
 
 # ---------- OS / editor junk ----------
 .DS_Store
@@ -29,36 +29,37 @@ __pycache__/
 **/SingletonLock
 
 # ---------- App-specific ----------
-btop/.config/btop/btop.log
-lazygit/.config/lazygit/temp*
-fastfetch/.config/fastfetch/*.png
-fastfetch/.config/fastfetch/*.jpg
-vesktop/.config/vesktop/sessionData
-vesktop/.config/vesktop/SingletonCookie
-vesktop/.config/vesktop/state.json
-ncspot/.config/ncspot/userstate.cbor
-$HOME/dotfiles/scripts/.config/scripts/dwm/haiku
+dotfiles/btop/.config/btop/btop.log
+dotfiles/lazygit/.config/lazygit/temp*
+dotfiles/fastfetch/.config/fastfetch/*.png
+dotfiles/fastfetch/.config/fastfetch/*.jpg
+dotfiles/ncspot/.config/ncspot/userstate.cbor
+dotfiles/scripts/.config/scripts/dwm/haiku
 
-# ---------- dwmblocks project files ----------
-dwmblocks/AGENTS.md
-dwmblocks/LICENSE
-dwmblocks/dwmblocks
-dwmblocks/README.md
-dwmblocks/Makefile
-dwmblocks/dwmblocks.c.rej
+# Vesktop: only track themes, ignore everything else (Crashpad, session data, cookies, etc.)
+dotfiles/vesktop/*
+!dotfiles/vesktop/themes/
+
+# ---------- Dwmblocks project files ----------
+Dwmblocks/AGENTS.md
+Dwmblocks/LICENSE
+Dwmblocks/dwmblocks
+Dwmblocks/README.md
+Dwmblocks/Makefile
+Dwmblocks/dwmblocks.c.rej
 # Custom local blocks config (per-machine)
 blocks.h
 
 # =====================================================
-# C build artifacts (suckless: dwm, dwmblocks, st, slock)
+# C build artifacts (suckless: dwm, Dwmblocks, St, slock)
 # =====================================================
 
 # Compiled binaries (match by dir since some share names with source dirs)
 dwm/dwm
 dwm/dwm.o
-dwmblocks/dwmblocks
-st/st
-st/st.o
+Dwmblocks/dwmblocks
+St/st
+St/st.o
 slock/slock
 slock/slock.o
 
