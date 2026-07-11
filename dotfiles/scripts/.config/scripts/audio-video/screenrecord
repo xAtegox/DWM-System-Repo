@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# --- CONFIGURATION ---
+REC_FLAG="$HOME/.cache/recording_flag"
+REC_COOLDOWN_FLAG="$HOME/.cache/recording_cooldown"
+COOLDOWN_SECS=5
+BASE_REC_DIR="$HOME/Videos/screenrecord"
+mkdir -p "$BASE_REC_DIR"
+is_recording() {
+  [[ -f "$REC_FLAG" ]]
+}
+is_on_ac() {
+  local supply
+  for supply in /sys/class/power_supply/*; do
+    [[ -f "$supply/type" ]] || continue
+    if [[ "$(cat "$supply/type")" == "Mains" ]]; then
+      if [[ -f "$supply/online" ]] && [[ "$(cat "$supply/online")" == "1" ]]; then
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+cooldown_remaining() {
+  if [[ -f "$REC_COOLDOWN_FLAG" ]]; then
+    local last_stop now elapsed
+    last_stop=$(cat "$REC_COOLDOWN_FLAG")
+    now=$(date +%s)
+    elapsed=$((now - last_stop))
+    if ((elapsed < COOLDOWN_SECS)); then
+      echo $((COOLDOWN_SECS - elapsed))
+      return 0
+    fi
+  fi
+  return 1
+}
+start_recording() {
+  if is_recording; then
+    exit 1
+  fi
+  local remaining
+  if remaining=$(cooldown_remaining); then
+    notify-send "Recording on cooldown" "Wait ${remaining}s before starting again"
+    exit 1
+  fi
+  $()$(
+    day_folder="$(date +%d-%m-%Y)"
+    session_path="$BASE_REC_DIR/$day_folder"
+    mkdir -p "$session_path"
+    timestamp="$(date +%H-%M)"
+    output="$session_path/${timestamp}.mp4"
+    geometry=$(xrandr | grep '*' | awk '{print $1}' | head -n1)
+    [[ -z "$geometry" ]] && geometry="1920x1200"
+    touch "$REC_FLAG"
+    echo "$output" >"${REC_FLAG}.output"
+    MIC_AUDIO=$(pactl info | awk -F': ' '/Default Source/ {print $2}')
+    DEFAULT_SINK=$(pactl info | awk -F': ' '/Default Sink/ {print $2}')
+    SYS_AUDIO=$(pactl list short sources | grep "$DEFAULT_SINK.monitor" | awk '{print $2}')
+    if is_on_ac; then
+      encoder_label="AV1 NVENC"
+      notify-send "Recording STARTED ($encoder_label)" "$timestamp"
+      ffmpeg \
+        -hwaccel cuda -hwaccel_output_format cuda \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f x11grab -framerate 60 -video_size "$geometry" -draw_mouse 1 -i ":0.0+0,0" \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f pulse -i "$SYS_AUDIO" \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f pulse -i "$MIC_AUDIO" \
+        -filter_complex "[1:a]volume=1.0[a_sys];[2:a]volume=1.2[a_mic];[a_sys][a_mic]amix=inputs=2:dropout_transition=0[aout]" \
+        -map 0:v -map "[aout]" \
+        -c:v av1_nvenc -preset p4 -tune hq -rc vbr -cq 24 -spatial_aq 1 -aq-strength 8 \
+        -g 60 \
+        -c:a aac \
+        -b:a 192k \
+        -fps_mode cfr \
+        -y "$output" >/dev/null 2>&1 &
+    else
+      encoder_label="x264 (CPU)"
+      notify-send "Recording STARTED ($encoder_label)" "$timestamp"
+      ffmpeg \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f x11grab -framerate 30 -video_size "$geometry" -draw_mouse 1 -i ":0.0+0,0" \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f pulse -i "$SYS_AUDIO" \
+        -thread_queue_size 1024 -probesize 32 -analyzeduration 0 -f pulse -i "$MIC_AUDIO" \
+        -filter_complex "[1:a]volume=2.0[a_sys];[2:a]volume=1.2[a_mic];[a_sys][a_mic]amix=inputs=2:dropout_transition=0[aout]" \
+        -map 0:v -map "[aout]" \
+        -c:v libx264 -preset ultrafast -crf 23 \
+        -pix_fmt yuv420p \
+        -g 30 \
+        -c:a aac \
+        -b:a 192k \
+        -fps_mode cfr \
+        -y "$output" >/dev/null 2>&1 &
+    fi
+    echo $! >"${REC_FLAG}.pid"
+    pkill -RTMIN+12 dwmblocks
+  )$()
+}
+stop_recording() {
+  if ! is_recording; then
+    exit 1
+  fi
+  $()$(
+    pid=$(cat "${REC_FLAG}.pid")
+    output=$(cat "${REC_FLAG}.output")
+    kill -INT "$pid"
+    while kill -0 "$pid" 2>/dev/null; do
+      sleep 0.5
+    done
+    rm -f \
+      "$REC_FLAG" \
+      "${REC_FLAG}.pid" \
+      "${REC_FLAG}.output"
+    if [[ -f "$output" ]]; then
+      notify-send "Recording Saved" "$(basename "$output")"
+      if command -v xclip >/dev/null 2>&1; then
+        printf 'file://%s' "$output" | xclip -selection clipboard -t text/uri-list
+      fi
+    fi
+    date +%s >"$REC_COOLDOWN_FLAG"
+    pkill -RTMIN+12 dwmblocks
+  )$()
+}
+status() {
+  if is_recording; then
+    echo "●"
+  else
+    return 1
+  fi
+}
+case "$1" in
+start) start_recording ;;
+stop) stop_recording ;;
+toggle) is_recording && stop_recording || start_recording ;;
+status) status ;;
+esac

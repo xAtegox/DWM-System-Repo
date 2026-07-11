@@ -1,0 +1,114 @@
+# =====================================================
+# Unified .gitignore — dotfiles / dwm / dwmblocks / st / slock / Zed
+# =====================================================
+
+# ---------- Secrets ----------
+**/gh/.config/hosts.yml
+gh/.config/gh
+gh/.config/gh/hosts.yml
+
+# ---------- OS / editor junk ----------
+.DS_Store
+*.swp
+*.swo
+*~
+
+# ---------- Cache, temp, logs ----------
+*.log
+*.tmp
+*.bak
+*.tar.gz
+.git_history
+__pycache__/
+*.pyc
+**/cache/
+**/tmp/
+**/.cache/
+**/Crashpad/
+**/SingletonSocket
+**/SingletonLock
+
+# ---------- App-specific ----------
+btop/.config/btop/btop.log
+lazygit/.config/lazygit/temp*
+fastfetch/.config/fastfetch/*.png
+fastfetch/.config/fastfetch/*.jpg
+vesktop/.config/vesktop/sessionData
+vesktop/.config/vesktop/SingletonCookie
+vesktop/.config/vesktop/state.json
+ncspot/.config/ncspot/userstate.cbor
+$HOME/dotfiles/scripts/.config/scripts/dwm/haiku
+
+# ---------- dwmblocks project files ----------
+dwmblocks/AGENTS.md
+dwmblocks/LICENSE
+dwmblocks/dwmblocks
+dwmblocks/README.md
+dwmblocks/Makefile
+dwmblocks/dwmblocks.c.rej
+# Custom local blocks config (per-machine)
+blocks.h
+
+# =====================================================
+# C build artifacts (suckless: dwm, dwmblocks, st, slock)
+# =====================================================
+
+# Compiled binaries (match by dir since some share names with source dirs)
+dwm/dwm
+dwm/dwm.o
+dwmblocks/dwmblocks
+st/st
+st/st.o
+slock/slock
+slock/slock.o
+
+# Object / prerequisite files
+*.o
+*.d
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel module compile results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf

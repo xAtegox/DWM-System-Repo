@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+# shellcheck disable=SC2154
+
+# Default mode
+MODE="default"
+# The directory of this script, so that this script can be called from anywhere
+EXTENSION_DIRECTORY="$(dirname "${0}")"
+TEMPLATES_DIRECTORY="${EXTENSION_DIRECTORY}/templates"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --mode)
+            MODE="$2"
+            shift 2
+            ;;
+        --list)
+            echo "Available modes:"
+            for template in "${TEMPLATES_DIRECTORY}"/*.json.template; do
+                if [[ -f "${template}" ]]; then
+                    echo "  $(basename "${template}" .json.template)"
+                fi
+            done
+            exit 0
+            ;;
+        --help|-h)
+            echo "Usage: $0 [--mode MODE] [--list]"
+            echo ""
+            echo "Options:"
+            echo "  --mode MODE    Select theme mode (default: default)"
+            echo "  --list         List available modes"
+            echo "  --help, -h     Show this help"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Your wal colour scheme file
+WAL_COLOURS_FILE="${HOME}/.cache/wal/colors.json"
+# The file to write the generated theme to, and that Zed will read
+THEME_FILE="${EXTENSION_DIRECTORY}/themes/wal-theme.json"
+# The template file for the selected mode (contains theme JSON with variable placeholders)
+TEMPLATE_FILE="${TEMPLATES_DIRECTORY}/${MODE}.json.template"
+
+# If the wal colour scheme file does not exist, exit with an error
+if [[ ! -f "${WAL_COLOURS_FILE}" ]]; then
+	echo "error: wal colourscheme file not found."
+	exit 1
+fi
+
+# Check if mode file exists
+if [[ ! -f "${TEMPLATE_FILE}" ]]; then
+    echo "error: mode '${MODE}' not found. Available modes:"
+    for template in "${TEMPLATES_DIRECTORY}"/*.json.template; do
+        if [[ -f "${template}" ]]; then
+            echo "  $(basename "${template}" .json.template)"
+        fi
+    done
+    exit 1
+fi
+
+# Create the themes directory if it does not exist
+mkdir -p "${EXTENSION_DIRECTORY}/themes"
+
+# Extract wal colors and export them
+eval "$(jq -r '
+  .special as $special |
+  .colors as $colors |
+  "export background=\($special.background)
+   export foreground=\($special.foreground)
+   export cursor=\($special.cursor)
+   export color0=\($colors.color0)
+   export color1=\($colors.color1)
+   export color2=\($colors.color2)
+   export color3=\($colors.color3)
+   export color4=\($colors.color4)
+   export color5=\($colors.color5)
+   export color6=\($colors.color6)
+   export color7=\($colors.color7)
+   export color8=\($colors.color8)
+   export color9=\($colors.color9)
+   export color10=\($colors.color10)
+   export color11=\($colors.color11)
+   export color12=\($colors.color12)
+   export color13=\($colors.color13)
+   export color14=\($colors.color14)
+   export color15=\($colors.color15)"
+  ' "${WAL_COLOURS_FILE}" || true)"
+
+# Generate the Zed theme
+envsubst < "${TEMPLATE_FILE}" > "${THEME_FILE}"
+
+echo "zed theme generated with '${MODE}' mode: ${THEME_FILE}"
