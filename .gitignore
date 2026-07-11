@@ -36,9 +36,8 @@ dotfiles/fastfetch/.config/fastfetch/*.jpg
 dotfiles/ncspot/.config/ncspot/userstate.cbor
 dotfiles/scripts/.config/scripts/dwm/haiku
 
-# Vesktop: only track themes, ignore everything else (Crashpad, session data, cookies, etc.)
-dotfiles/vesktop/*
-!dotfiles/vesktop/themes/
+# Vesktop: only track themes, ignore everything else
+*/vesktop/*
 
 # ---------- Dwmblocks project files ----------
 Dwmblocks/AGENTS.md
