@@ -47,8 +47,6 @@ All keybinds use `Mod` (Windows key) unless otherwise specified.
 | `Mod + Ctrl + I`             | Decrease number of master windows                               |
 | `Mod + Ctrl + Shift + L`     | Toggle sticky window                                            |
 
-> Layout-switching keybinds (Tiled/Monocle/Spiral/Dwindle, previously on `Mod+K` and friends) and the default-layout bind on `Mod+Ctrl+Space` are currently commented out in `config.h` — there's no active keybind to change layout right now.
-
 ### Gaps Control
 
 | Keybind           | Action           |
