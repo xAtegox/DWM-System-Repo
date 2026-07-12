@@ -2,15 +2,11 @@ id = 830303254508240898
 hosts = ["127.0.0.1:6600"]
 
 [format]
-state = "{artist}""
-large_text = "{album}"
-# We leave this blank so no text pops up for a non-existent small icon
-small_text = ""
+details = "$title"
+state = "$artist"
+large_text = "$album"
+small_text = "$artist"
 timestamp = "elapsed"
-
-# 'notes' is the default that tells the app to look for album art
 large_image = "notes"
-
-# Setting this to "" removes the small circle entirely
-small_image = ""
-details = "{title}"
+small_image = "notes"
+display_type = "name"
