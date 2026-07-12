@@ -9,6 +9,7 @@ WAL_LAST="$(dirname "$0")/wal_last.txt"
 mapfile -t BACKENDS < <(wal --backend | tail -n +2 | sed 's/^ - //' | grep -v '^wal$')
 BACKENDS=(wal "${BACKENDS[@]}")
 BACKEND_IDX=0
+ANIM_PID_FILE="/tmp/wallpaper_anim_pid"
 PREVIEW_CACHE="$HOME/.cache/wal_preview_thumbs"
 ZEN_THEME_DIR="$HOME/.config/zennotes/themes/wal-theme"
 mkdir -p "$PREVIEW_CACHE"
@@ -32,7 +33,7 @@ if [[ "$1" == "--refresh" ]]; then
   fi
 
   if command -v kitty &>/dev/null; then
-    kitty @ --to unix:/tmp/kitty set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
+    kitty @ set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
   fi
 
   ~/Linux_Config/Zed/zed-theme-wal/generate_theme &
@@ -146,8 +147,87 @@ refresh_dwm() {
   fi
 }
 
+# ── Animated wallpaper ────────────────────────────────────────────────────────
+kill_animated() {
+  if [ -f "$ANIM_PID_FILE" ]; then
+    local pid
+    pid=$(cat "$ANIM_PID_FILE")
+    kill -0 "$pid" 2>/dev/null && {
+      kill -TERM "$pid" 2>/dev/null
+      sleep 0.3
+      kill -KILL "$pid" 2>/dev/null
+    }
+    rm -f "$ANIM_PID_FILE"
+  fi
+  pkill -f "xwinwrap.*mpv" 2>/dev/null
+}
+
 set_static() {
+  kill_animated
   feh --bg-scale "$1"
+}
+
+set_animated() {
+  local anim="$1" backend="$2" mode="${3:-dark}"
+  kill_animated
+
+  local geo
+  geo=$(xdpyinfo | grep dimensions | awk '{print $2}')
+  local RES_W RES_H
+  RES_W=$(echo "$geo" | cut -dx -f1)
+  RES_H=$(echo "$geo" | cut -dx -f2)
+
+  local frame="/tmp/wal_frame_$$.png"
+  ffmpeg -i "$anim" -frames:v 1 -f image2 -y "$frame" >/dev/null 2>&1
+  [ ! -f "$frame" ] && {
+    notify-send "Wallpaper" "Failed to extract frame" -t 3000
+    return 1
+  }
+  case "$mode" in
+  light)
+    wal -i "$frame" -l --backend "$backend" -t -n -q
+    process_wal_colors 0.05 0.0 0.2 0.3
+    ;;
+  medium)
+    wal -i "$frame" --backend "$backend" -t -n -q
+    process_wal_colors 0.0 2.0 0.02 2.0 vibrant
+    ;;
+  *)
+    wal -i "$frame" --backend "$backend" -t -n -q
+    ;;
+  esac
+  rm -f "$frame"
+
+  local PLAYFILE="$anim"
+  case "$anim" in
+  *.gif)
+    local hash
+    hash=$(md5sum "$anim" | cut -d' ' -f1)
+    local scaled="/tmp/wal_scaled_${hash}_${RES_W}x${RES_H}.mp4"
+    if [ ! -f "$scaled" ]; then
+      notify-send "Wallpaper" "Scaling GIF, please wait…" -t 4000
+      ffmpeg -i "$anim" \
+        -vf "scale=${RES_W}:${RES_H}:force_original_aspect_ratio=increase,crop=${RES_W}:${RES_H}" \
+        -c:v libx264 -preset fast -crf 18 -an \
+        -y "$scaled" >/dev/null 2>&1
+    fi
+    [ -f "$scaled" ] && PLAYFILE="$scaled"
+    ;;
+  esac
+
+  setsid xwinwrap -g "$geo" -ni -s -nf -b -un -argb -fdt -ov -- \
+    mpv --no-audio --no-osc --no-input-default-bindings \
+    --no-osd-bar --no-border --no-window-dragging \
+    --loop-file=inf --really-quiet --panscan=1.0 -wid WID "$PLAYFILE" \
+    >/tmp/xwinwrap.log 2>&1 &
+  local pid=$!
+  sleep 0.5
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "$pid" >"$ANIM_PID_FILE"
+  else
+    notify-send "Wallpaper" "xwinwrap failed" -t 3000
+    return 1
+  fi
 }
 
 # ── Color post-processing (inlined, replaces process-wal-colors) ──────────────
@@ -375,21 +455,30 @@ PYEOF
 apply() {
   local file="$1" backend="$2" mode="${3:-dark}"
 
-  set_static "$file"
-  case "$mode" in
-  light)
-    wal -i "$file" -l --backend "$backend" -t -n -q
-    process_wal_colors 0.05 0.0 0.2 0.3
-    ;;
-  medium)
-    wal -i "$file" --backend "$backend" -t -n -q
-    process_wal_colors 0.0 2.0 0.02 2.0 vibrant
+  case "$file" in
+  *.gif | *.mp4 | *.webm | *.mkv)
+    set_animated "$file" "$backend" "$mode" || return 1
     ;;
   *)
-    wal -i "$file" --backend "$backend" -t -n -q
+    set_static "$file"
+    case "$mode" in
+    light)
+      wal -i "$file" -l --backend "$backend" -t -n -q
+      process_wal_colors 0.05 0.0 0.2 0.3
+      ;;
+    medium)
+      wal -i "$file" --backend "$backend" -t -n -q
+      process_wal_colors 0.0 2.0 0.02 2.0 vibrant
+      ;;
+    *)
+      wal -i "$file" --backend "$backend" -t -n -q
+      ;;
+    esac
     ;;
   esac
 
+  # Fires for BOTH branches — set_animated also runs `wal -i "$frame"`
+  # internally, so animated wallpapers get a fresh foreground color too.
   sync_keyboard_color
   sync_zennotes_theme
 
@@ -503,6 +592,8 @@ while true; do
   IMG=$(
     find -L "$WALL_DIR" -type f \( \
       -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
+      -o -iname "*.gif" -o -iname "*.mp4" \
+      -o -iname "*.webm" -o -iname "*.mkv" \
       \) | sort | while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(basename "$f")"; done | fzf \
       --no-sort \
       --reverse \
@@ -529,12 +620,21 @@ while true; do
       --color="info:#3a4436,spinner:#8aaa74" \
       --preview="
         file={1};
+        case \"\$file\" in
+          *.gif|*.mp4|*.webm|*.mkv)
+            hash=\$(echo \"\$file\" | md5sum | cut -d' ' -f1);
+            thumb=\"$PREVIEW_CACHE/\$hash.png\";
+            [ ! -f \"\$thumb\" ] && ffmpeg -i \"\$file\" -frames:v 1 -f image2 -y \"\$thumb\" >/dev/null 2>&1;
+            preview_path=\"\$thumb\";;
+          *)
+            preview_path=\"\$file\";;
+        esac;
         ueberzugpp cmd -s \"$SOCKET\" -i walpreview -a add \
           -x \$(( FZF_PREVIEW_LEFT + 4 )) \
           -y \$(( FZF_PREVIEW_TOP + 1 )) \
           --max-width 56 \
           --max-height 15 \
-          -f \"\$file\" 2>/dev/null
+          -f \"\$preview_path\" 2>/dev/null
       " \
       --preview-window="right:55%:nowrap" \
       --bind="ctrl-b:become(echo __NEXT_BACKEND__)" \
@@ -588,6 +688,8 @@ while true; do
   __RANDOM__)
     IMG=$(find -L "$WALL_DIR" -type f \( \
       -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
+      -o -iname "*.gif" -o -iname "*.mp4" \
+      -o -iname "*.webm" -o -iname "*.mkv" \
       \) | shuf -n 1)
     apply "$IMG" "$BACKEND" "$MODE"
     exit 0
