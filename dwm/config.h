@@ -209,6 +209,8 @@ static const Key keys[] = {
     {MODKEY,                           XK_Shift_R, spawn, {.v = (const char *[]){HOME "/.config/scripts/system/powermenu", NULL}}}, // BOOT MENU
     {MODKEY | ShiftMask | ControlMask, XK_s,     spawn, {.v = (const char *[]) { "steam", NULL}}}, // STEAM
     {MODKEY,                           XK_BackSpace, spawn, {.v = (const char *[]){HOME "/.config/scripts/system/lock", NULL}}}, // LOCK SCREEN
+    {MODKEY | ShiftMask,               XK_l,     spawn, {.v = (const char*[]){ "/home/atego/Linux_Config/SlockScreen/bin/slock-main.sh", "add", NULL}}}, // SlockScreen
+
     // Special Function keys
     {0, XF86XK_AudioMute,             spawn, SHCMD("pactl set-sink-mute @DEFAULT_SINK@ toggle; pkill -RTMIN+10 dwmblocks")},
     {0, XF86XK_AudioLowerVolume,      spawn, SHCMD("pactl set-sink-volume @DEFAULT_SINK@ -5%; pkill -RTMIN+10 dwmblocks")},
