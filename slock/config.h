@@ -30,7 +30,7 @@ static XRectangle rectangles[9] = {
 /* Enable blur */
 #define BLUR
 /* Set blur radius */
-static const int blurRadius = 3;
+static const int blurRadius = 4;
 /* Enable Pixelation (uncomment to enable) */
 //#define PIXELATION
 /* Set pixelation radius */

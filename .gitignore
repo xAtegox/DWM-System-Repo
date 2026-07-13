@@ -35,6 +35,7 @@ dotfiles/fastfetch/.config/fastfetch/*.png
 dotfiles/fastfetch/.config/fastfetch/*.jpg
 dotfiles/ncspot/.config/ncspot/userstate.cbor
 dotfiles/scripts/.config/scripts/dwm/haiku
+dotfiles/scripts/.config/scripts/images-photos-wallpapers/wal_last.txt
 
 # Vesktop: only track themes, ignore everything else
 */vesktop/*
