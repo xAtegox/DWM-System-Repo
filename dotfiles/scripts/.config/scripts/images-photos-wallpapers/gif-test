@@ -393,6 +393,10 @@ apply() {
   sync_keyboard_color
   sync_zennotes_theme
 
+  for sock in "$XDG_RUNTIME_DIR"/nvim.*.0; do
+    [ -S "$sock" ] && nvim --server "$sock" --remote-send ':colorscheme wal<CR>' 2>/dev/null
+  done
+
   refresh_dwm
   echo "$file" >"$WAL_LAST"
   notify-send "Wallpaper" "$(basename "$file") [$mode]" -t 3000

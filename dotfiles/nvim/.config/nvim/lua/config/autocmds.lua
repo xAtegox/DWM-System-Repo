@@ -12,26 +12,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
 })
 
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "NvimTree",
-  callback = function(args)
-    local bufnr = args.buf
-    vim.keymap.set(
-      "n",
-      "<leader>a+",
-      "<cmd>AiderTreeAddFile<cr>",
-      { desc = "Add File from Tree to Aider", buffer = bufnr, noremap = true, silent = true }
-    )
-    vim.keymap.set(
-      "n",
-      "<leader>a-",
-      "<cmd>AiderTreeDropFile<cr>",
-      { desc = "Drop File from Tree from Aider", buffer = bufnr, noremap = true, silent = true }
-    )
-  end,
-  desc = "Aider NvimTree Keymaps",
-})
-
 -- sync system clipboard to vim clipboard
 vim.api.nvim_create_autocmd("FocusGained", {
   callback = function()
@@ -63,28 +43,3 @@ local prompt_active = true
 --  system_prompt = custom_system_prompt,
 -- })
 -- vim.notify("Custom system prompt activated by default", vim.log.levels.INFO)
-
--- Autocmd to toggle the prompt on/off
-vim.api.nvim_create_autocmd("User", {
-  pattern = "ToggleMyPrompt",
-  callback = function()
-    prompt_active = not prompt_active
-    local message
-    if prompt_active then
-      require("avante.config").override({
-        system_prompt = custom_system_prompt,
-      })
-      message = "Custom system prompt activated"
-    else
-      require("avante.config").override({
-        system_prompt = nil,
-      })
-      message = "Custom system prompt deactivated"
-    end
-    vim.notify(message, vim.log.levels.INFO)
-  end,
-})
-
-vim.keymap.set("n", "<leader>am", function()
-  vim.api.nvim_exec_autocmds("User", { pattern = "ToggleMyPrompt" })
-end, { desc = "avante: toggle my prompt" })
