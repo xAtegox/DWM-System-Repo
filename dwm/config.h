@@ -38,6 +38,67 @@ static char *colors[][3] = {
     [SchemeInfoNorm] = {normfgcolor,   normbgcolor, normbgcolor},
 };
 
+// Some easyer shortcuts to use
+#define STATUSBAR "dwmblocks"
+#define BROWSER   "helium-browser"
+#define CHATCLIENT "discord"
+#define HOME "/home/atego" // Easy way to change who owns this
+
+static const char *const autostart[] = {
+	/* how to add new apps */
+	/* "app", NULL, */
+	/* "sh", "-c", "shell command", NULL, */
+
+	/* wallpaper restore */
+	"/bin/sh", "-c", "wal -R && feh --bg-fill \"$(<" HOME "/.cache/wal/wal)\"", NULL,
+
+	/* compositor */
+	"picom", "--config", HOME "/.config/picom/picom.conf", NULL,
+
+	/* statusbar */
+	"/bin/sh", "-c", "exec dwmblocks", NULL,
+
+	/* theme restore */
+	"/bin/sh", "-c", "exec " HOME "/.config/scripts/theme-restore", NULL,
+
+	/* numlock */
+	"/bin/sh", "-c", "numlockx on", NULL,
+
+	/* dark mode */
+	"/bin/sh", "-c", "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'", NULL,
+
+	/* trackpad */
+	"/bin/sh", "-c", "xinput disable 14", NULL,
+
+	/* notification daemon */
+	"/bin/sh", "-c", "exec dunst", NULL,
+
+	/* pre-clear dwmblocks signal */
+	"pkill", "-RTMIN+15", "dwmblocks", NULL,
+
+	/* mpc player-change watcher */
+	"/bin/sh", "-c", "exec sh -c 'while mpc idle player; do pkill -RTMIN+11 dwmblocks; done'", NULL,
+
+	/* pactl sink-change watcher */
+	"/bin/sh", "-c",
+		"exec sh -c \"pactl subscribe | grep --line-buffered \\\"Event 'change' on sink\\\" | while read -r _; do pkill -RTMIN+10 dwmblocks; done\"",
+		NULL,
+
+	/* discord rpc */
+	"/bin/sh", "-c", "exec mpDris2", NULL,
+
+	/* portal */
+	"/bin/sh", "-c", "exec /usr/lib/xdg-desktop-portal-gtk", NULL,
+
+	/* mic listener */
+	"/bin/sh", "-c", "exec " HOME "/.config/scripts/statusbar/mic-listener", NULL,
+
+	/* slock-checker */
+	"/bin/sh", "-c", "exec " HOME "/Linux_Config/SlockScreen/bin/slock-checker.sh", NULL,
+
+	NULL /* terminate */
+};
+
 static const char *tags[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
 static const Rule rules[] = {
     {"neofetch",          NULL,         "Welcome",      0, 1, 1, 0, -1},  
@@ -63,7 +124,6 @@ static const Rule rules[] = {
     {"fzfmenu",NULL, NULL,        0, 1, 1, 1, -1},     /* fzf menu (any title) */
     {"mpv",    NULL, NULL,        0, 1, 0, 1, -1},     /* mpv video player */
     {"Nsxiv",  NULL, NULL,        0, 1, 0, 1, -1},     /* nsxiv image preview */
-
 };
 
 #include "vanitygaps.c"
@@ -110,12 +170,6 @@ static const Layout layouts[] = {
   {                                                                            \
     .v = (const char *[]) { "/usr/bin/gtk-launch", cmd, NULL }                 \
   }
-
-// Some easyer shortcuts to use
-#define STATUSBAR "dwmblocks"
-#define BROWSER   "helium-browser"
-#define CHATCLIENT "discord"
-#define HOME "/home/atego" // Easy way to change who owns this
 
 // Utility Comands
 
@@ -186,26 +240,20 @@ static const Key keys[] = {
     {MODKEY | ControlMask,  XK_t,     togglebarstatus, {0}},
     // Specific app keybinds
     {MODKEY,                           XK_m,     spawn, {.v = (const char *[]) {"kitty", "-e", "rmpc", NULL}}}, // MUSIC PLAYER
-    {MODKEY,                           XK_a,     spawn, {.v = (const char *[]) {"kitty", "-e", "anipy-cli", NULL}}}, // ANIME PLAYER
     {MODKEY,                           XK_b,     spawn, {.v = (const char *[]) {BROWSER, NULL}}}, // BROWSER
     {MODKEY,                           XK_d,     spawn, {.v = (const char *[]) {"vesktop", NULL}}}, // DISCORD
     {MODKEY,                           XK_e,     spawn, {.v = (const char *[]) {"emacs", NULL}}}, // DOOM EMACS
-    {MODKEY | ShiftMask,               XK_d,     spawn, {.v = (const char *[]) {"/bin/bash", HOME "/.config/scripts/app-players/yt-music-tool", NULL}}}, // MUSIC DATA EDDITOR
     {MODKEY | ShiftMask,               XK_b,     spawn, {.v = (const char *[]) {"kitty", "-e", "btop", NULL}}}, // STATISTIC SCREEN
     {MODKEY,                           XK_c,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/custom-helpers/cal-check", NULL}}}, // CALLENDAR CHECKER
     {MODKEY | ShiftMask,               XK_n,     spawn, {.v = (const char *[]) {"kitty", "-e", "nvim", NULL}}}, // NVIM
     {MODKEY,                           XK_n,     spawn, {.v = (const char *[]) {"zennotes", NULL}}}, // ZEN NOTES
     {MODKEY | ShiftMask,               XK_f,     spawn, {.v = (const char *[]) {"nautilus", NULL}}}, // NAUTILOUS
-    {MODKEY | ControlMask | ShiftMask, XK_b,     spawn, {.v = (const char *[]) {"foliate", NULL}}}, // BOOK READER
-    {MODKEY,                           XK_y,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/app-players/ytplay-launcher", NULL}}},  // YOUTUBE PLAYER
     {MODKEY | ShiftMask,               XK_r,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/screenrecord", "toggle", NULL}}}, // SCREEN RECORD
-    {MODKEY | ControlMask,             XK_a,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/audiorecording", "toggle", NULL}}}, // AUDIO RECORD
     {MODKEY | ShiftMask,               XK_w,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/images-photos-wallpapers/gif-test", NULL}}}, // WALLPAPER PICKER
     {MODKEY | ControlMask | ShiftMask, XK_w,     spawn, {.v = (const char *[]) {"onlyoffice-desktopeditors", NULL}}}, // MS OFFICE
     {MODKEY,                           XK_z,     spawn, {.v = (const char *[]) {"zeditor", NULL}}}, // ZED EDITOR
     {MODKEY,                           XK_t,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/system/toggle-kitty-opacity", NULL}}}, // KITTY TRANSPARENCY
     {MODKEY | ShiftMask,               XK_t,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/system/trackpad-toggle", NULL}}}, // TRACKPAD TOGGLE
-    {MODKEY | ShiftMask,               XK_m,     spawn, {.v = (const char *[]) {"prismlauncher", NULL}}}, // PRISMLAUNCHER
     {MODKEY | ControlMask,             XK_j,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/cam.sh", "--view", NULL}}}, // CAMERA PREVIEW
     {MODKEY,                           XK_Shift_R, spawn, {.v = (const char *[]){HOME "/.config/scripts/system/powermenu", NULL}}}, // BOOT MENU
     {MODKEY | ShiftMask | ControlMask, XK_s,     spawn, {.v = (const char *[]) { "steam", NULL}}}, // STEAM
