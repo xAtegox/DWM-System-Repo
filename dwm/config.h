@@ -189,6 +189,7 @@ static const Key keys[] = {
     {MODKEY,                           XK_a,     spawn, {.v = (const char *[]) {"kitty", "-e", "anipy-cli", NULL}}}, // ANIME PLAYER
     {MODKEY,                           XK_b,     spawn, {.v = (const char *[]) {BROWSER, NULL}}}, // BROWSER
     {MODKEY,                           XK_d,     spawn, {.v = (const char *[]) {"vesktop", NULL}}}, // DISCORD
+    {MODKEY,                           XK_e,     spawn, {.v = (const char *[]) {"emacs", NULL}}}, // DOOM EMACS
     {MODKEY | ShiftMask,               XK_d,     spawn, {.v = (const char *[]) {"/bin/bash", HOME "/.config/scripts/app-players/yt-music-tool", NULL}}}, // MUSIC DATA EDDITOR
     {MODKEY | ShiftMask,               XK_b,     spawn, {.v = (const char *[]) {"kitty", "-e", "btop", NULL}}}, // STATISTIC SCREEN
     {MODKEY,                           XK_c,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/custom-helpers/cal-check", NULL}}}, // CALLENDAR CHECKER
