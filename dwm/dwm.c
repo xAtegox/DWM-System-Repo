@@ -882,7 +882,8 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m) /* take a pointer to the monitor we want to draw the bar on */
 {
-	int x, w, tw = 0; /* x pos, width, and text width */
+	int x, w, tw = 0; /* x pos, width, and text width */ 
+  int tlpad;
 	int boxs = drw->fonts->h / 9; /* the little square box for indicators */
 	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0; /* track which tags are in use and which are urgent */
@@ -944,9 +945,11 @@ drawbar(Monitor *m) /* take a pointer to the monitor we want to draw the bar on 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel && selmon->showtitle) {
 			drw_setscheme(drw, scheme[m == selmon ? SchemeInfoSel : SchemeInfoNorm]);
-			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
+			tlpad = MAX((m->ww - ((int)TEXTW(m->sel->name) - lrpad)) / 2 - x, lrpad / 2);
+      drw_text(drw, x, 0, w, bh, tlpad, m->sel->name, 0);
 			if (m->sel->isfloating && selmon->showfloating)
-				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
+				drw_rect(drw, x + boxs + tlpad - lrpad / 2, boxs,
+             boxw, boxw, m->sel->isfixed, 0);
 		} else {
 			drw_setscheme(drw, scheme[SchemeInfoNorm]);
 			drw_rect(drw, x, 0, w, bh, 1, 1);
