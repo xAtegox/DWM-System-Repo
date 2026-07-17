@@ -181,7 +181,6 @@ static const char *dmenucmd[] = {"dmenu_run", "-m",  dmenumon,       "-fn",
 
 // Define What Is Main Terminal
 static const char *termcmd[] = {"kitty", NULL};
-static const char *stcmd[] = {"/usr/local/bin/st", "-e", "zsh", "-c", "cat ~/.cache/wal/sequences 2>/dev/null; exec zsh", NULL};
 
 // Some utility, spawn app when tag middleclicked
 static const Arg tagexec[] = {
@@ -199,7 +198,6 @@ static const Arg tagexec[] = {
 static const Key keys[] = {
     {MODKEY,                             XK_p,            spawn,            {.v = dmenucmd}},    // Open Dmenu
     {MODKEY,                             XK_Return,       spawn,            {.v = termcmd}},     // Spawn Terminal (this config is kitty)
-    {MODKEY | ShiftMask,                 XK_Return,       spawn,            {.v = stcmd}},       // Spawn ST
     {MODKEY | ControlMask,               XK_b,            togglebar,        {0}},                // Toggle Top Bar
     STACKKEYS(MODKEY, focus) STACKKEYS(MODKEY | ShiftMask, push)
     {MODKEY | ShiftMask,                 XK_i,            incnmaster,       {.i = +1}},          // Increrase master windows
