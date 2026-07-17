@@ -96,6 +96,9 @@ static const char *const autostart[] = {
 	/* slock-checker */
 	"/bin/sh", "-c", "exec " HOME "/Linux_Config/SlockScreen/bin/slock-checker.sh", NULL,
 
+  /* battery percentage watcher */
+	"/bin/sh", "-c", "exec " HOME "/.config/scripts/system/batery-watchdog", NULL,
+
 	NULL /* terminate */
 };
 
