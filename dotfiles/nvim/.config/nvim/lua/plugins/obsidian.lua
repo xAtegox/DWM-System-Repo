@@ -11,7 +11,7 @@ return {
     workspaces = {
       {
         name = "Notes",
-        path = "~/Documents/Obsidian/brain2/",
+        path = "~/Documents/Brain-2/",
       },
     },
     picker = {
