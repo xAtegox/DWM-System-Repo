@@ -1,9 +1,10 @@
 #!/bin/sh
 
-BAT="/sys/class/power_supply/BAT1"
-
-while :; do
-    cat "$BAT/capacity"
-    inotifywait -q -e modify "$BAT/capacity" >/dev/null
-    pkill -RTMIN+1 dwmblocks
-done
+udevadm monitor --udev --subsystem-match=power_supply |
+  while read -r line; do
+    case "$line" in
+    *BAT*)
+      pkill -RTMIN+1 dwmblocks
+      ;;
+    esac
+  done

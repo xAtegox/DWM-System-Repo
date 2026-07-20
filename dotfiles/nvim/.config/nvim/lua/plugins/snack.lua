@@ -57,7 +57,7 @@ return {
               desc = "Find Note",
               action = function()
                 Snacks.picker.files({
-                  follow = true,
+                  follow = false,
                   dirs = {
                     vim.fn.expand("~/.config"),
                     vim.fn.expand("~/Coding-Hobby"),
