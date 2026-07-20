@@ -5,14 +5,8 @@ return {
       picker = {
         sources = {
           files = {
-            follow = true,
             exclude = {
-              ".steam/",
               ".local/share/Steam/",
-              "steamapps/",
-              ".cache/",
-              "node_modules/",
-              ".git/",
             },
           },
         },
@@ -56,16 +50,7 @@ return {
               key = "f",
               desc = "Find Note",
               action = function()
-                Snacks.picker.files({
-                  follow = false,
-                  dirs = {
-                    vim.fn.expand("~/.config"),
-                    vim.fn.expand("~/Coding-Hobby"),
-                    vim.fn.expand("~/Documents"),
-                    vim.fn.expand("~/Doom-Emacs"),
-                    vim.fn.expand("~/Linux_Config"),
-                  },
-                })
+                Snacks.picker.files()
               end,
             },
             { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },
