@@ -12,7 +12,7 @@ return {
       hide_fillchars = false,
 
       -- Modern borderless telescope theme - also applies to fzf-lua
-      borderless_telescope = false,
+      borderless_telescope = true,
 
       -- Set terminal colors used in `:terminal`
       terminal_colors = true,
