@@ -99,6 +99,9 @@ static const char *const autostart[] = {
   /* battery percentage watcher */
 	"/bin/sh", "-c", "exec " HOME "/.config/scripts/system/batery-watchdog", NULL,
 
+  /* emacs daemon */
+  "/bin/sh", "-c", "exec emacs --daemon", NULL,
+
 	NULL /* terminate */
 };
 
@@ -243,7 +246,7 @@ static const Key keys[] = {
     {MODKEY,                           XK_m,     spawn, {.v = (const char *[]) {"kitty", "-e", "rmpc", NULL}}}, // MUSIC PLAYER
     {MODKEY,                           XK_b,     spawn, {.v = (const char *[]) {BROWSER, NULL}}}, // BROWSER
     {MODKEY,                           XK_d,     spawn, {.v = (const char *[]) {"vesktop", NULL}}}, // DISCORD
-    {MODKEY,                           XK_e,     spawn, {.v = (const char *[]) {"emacs", NULL}}}, // DOOM EMACS
+    {MODKEY,                           XK_e,     spawn, {.v = (const char *[]) {"emacsclient", "-c", NULL}}}, // DOOM EMACS
     {MODKEY | ShiftMask,               XK_b,     spawn, {.v = (const char *[]) {"kitty", "-e", "btop", NULL}}}, // STATISTIC SCREEN
     {MODKEY,                           XK_c,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/custom-helpers/cal-check", NULL}}}, // CALLENDAR CHECKER
     {MODKEY | ShiftMask,               XK_n,     spawn, {.v = (const char *[]) {"kitty", "-e", "nvim", NULL}}}, // NVIM
@@ -257,7 +260,6 @@ static const Key keys[] = {
     {MODKEY | ShiftMask,               XK_t,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/system/trackpad-toggle", NULL}}}, // TRACKPAD TOGGLE
     {MODKEY | ControlMask,             XK_j,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/cam.sh", "--view", NULL}}}, // CAMERA PREVIEW
     {MODKEY,                           XK_Shift_R, spawn, {.v = (const char *[]){HOME "/.config/scripts/system/powermenu", NULL}}}, // BOOT MENU
-    {MODKEY | ShiftMask | ControlMask, XK_s,     spawn, {.v = (const char *[]) { "steam", NULL}}}, // STEAM
     {MODKEY,                           XK_BackSpace, spawn, {.v = (const char *[]){HOME "/.config/scripts/system/lock", NULL}}}, // LOCK SCREEN
     {MODKEY | ShiftMask,               XK_l,     spawn, {.v = (const char*[]){ "/home/atego/Linux_Config/SlockScreen/bin/slock-main.sh", "add", NULL}}}, // SlockScreen
 
