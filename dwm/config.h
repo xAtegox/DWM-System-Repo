@@ -255,7 +255,6 @@ static const Key keys[] = {
     {MODKEY | ShiftMask,               XK_r,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/screenrecord", "toggle", NULL}}}, // SCREEN RECORD
     {MODKEY | ShiftMask,               XK_w,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/images-photos-wallpapers/gif-test", NULL}}}, // WALLPAPER PICKER
     {MODKEY | ControlMask | ShiftMask, XK_w,     spawn, {.v = (const char *[]) {"onlyoffice-desktopeditors", NULL}}}, // MS OFFICE
-    {MODKEY,                           XK_z,     spawn, {.v = (const char *[]) {"zeditor", NULL}}}, // ZED EDITOR
     {MODKEY,                           XK_t,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/system/toggle-kitty-opacity", NULL}}}, // KITTY TRANSPARENCY
     {MODKEY | ShiftMask,               XK_t,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/system/trackpad-toggle", NULL}}}, // TRACKPAD TOGGLE
     {MODKEY | ControlMask,             XK_j,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/cam.sh", "--view", NULL}}}, // CAMERA PREVIEW

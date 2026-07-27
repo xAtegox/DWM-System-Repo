@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+MUSIC="$HOME/Music"
+
+folder=$(find "$MUSIC" -type d | fzf --prompt="Select album: ") || exit
+
+find "$folder" -type f \( \
+  -iname "*.flac" -o \
+  -iname "*.mp3" -o \
+  -iname "*.m4a" -o \
+  -iname "*.ogg" -o \
+  -iname "*.opus" \
+  \) -print0 |
+  while IFS= read -r -d '' file; do
+    lrc="${file%.*}.lrc"
+
+    [[ -f "$lrc" ]] && {
+      echo "Skipping: $(basename "$file")"
+      continue
+    }
+
+    artist=$(ffprobe -v error \
+      -show_entries format_tags=artist \
+      -of default=noprint_wrappers=1:nokey=1 \
+      "$file")
+
+    title=$(ffprobe -v error \
+      -show_entries format_tags=title \
+      -of default=noprint_wrappers=1:nokey=1 \
+      "$file")
+
+    if [[ -z "$artist" || -z "$title" ]]; then
+      echo "Missing metadata: $(basename "$file")"
+      continue
+    fi
+
+    echo "Downloading: $artist - $title"
+
+    if syncedlyrics "$artist - $title" >"$lrc"; then
+      echo "✓ Saved $(basename "$lrc")"
+    else
+      echo "✗ Failed"
+      rm -f "$lrc"
+    fi
+  done

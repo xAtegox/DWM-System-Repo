@@ -6,7 +6,7 @@
     password: None,
     theme: None,
     enable_config_hot_reload: true,
-    cache_dir: None,
+    cache_dir: Some("/home/atego/.cache/rmpc"),
     on_song_change: ["pkill -RTMIN+11 dwmblocks", "pkill -USR1 mpd-discord-rpc"],
     volume_step: 5,
     max_fps: 30,
@@ -77,6 +77,7 @@
             "O":       ShowOutputs,
             "P":       ShowDecoders,
             "m":       AddRandom,
+            "y":       ExternalCommand(command: ["rmpc", "searchyt", "{}"], description: "Search YouTube and add song"),
         },
         navigation: {
             "k":         Up,
@@ -137,30 +138,30 @@
         album_sort_by: Date,
     ),
     tabs: [
-    (
-        name: "Playing",
-        pane: Split(
-            direction: Horizontal,
-            panes: [
-                (size: "65%", pane: Split(
-                    direction: Vertical,
-                    panes: [
-                        (size: "65%", pane: Pane(Queue), borders: "ALL"),
-                        (size: "35%", pane: Pane(Cava), borders: "ALL"),
-                    ],
-                )),
-                (size: "35%", pane: Pane(AlbumArt), borders: "ALL", border_symbols: Rounded),
-            ],
+        (
+            name: "Playing",
+            pane: Split(
+                direction: Horizontal,
+                panes: [
+                    (size: "65%", pane: Split(
+                        direction: Vertical,
+                        panes: [
+                            (size: "65%", pane: Pane(Queue), borders: "ALL"),
+                            (size: "35%", pane: Pane(Cava), borders: "ALL"),
+                        ],
+                    )),
+                    (size: "35%", pane: Pane(AlbumArt), borders: "ALL", border_symbols: Rounded),
+                ],
+            ),
         ),
-    ),
-    (
-        name: "Find",
-        pane: Pane(Search),
-    ),
-    (
-        name: "Dir",
-        pane: Pane(Directories),
-    ),
-],
+        (
+            name: "Find",
+            pane: Pane(Search),
+        ),
+        (
+            name: "Dir",
+            pane: Pane(Directories),
+        ),
+    ],
 )
 

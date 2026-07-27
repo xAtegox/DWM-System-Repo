@@ -8,10 +8,10 @@ LOG_FILE="/tmp/cam_rec.log"
 # Based on 1920x1080 input. Tune these to frame your face.
 # Formula: x = (1920 - CROP_W) / 2  to keep it centered horizontally.
 # Increase CROP_Y to cut more ceiling, decrease to show more above your head.
-CROP_W=700 # width  — square crop, removes sides
-CROP_H=700 # height — same as width = square
-CROP_X=610 # x offset — (1920 - 700) / 2 = 610 (centered, cuts door)
-CROP_Y=100 # y offset — shifts down to catch face + chin, cuts excess ceiling
+CROP_W=1920 # width  — square crop, removes sides
+CROP_H=1080 # height — same as width = square
+CROP_X=610  # x offset — (1920 - 700) / 2 = 610 (centered, cuts door)
+CROP_Y=100  # y offset — shifts down to catch face + chin, cuts excess ceiling
 
 # --- Border configuration ---
 BORDER=10           # thickness of the warm beige border in pixels
@@ -80,7 +80,7 @@ view)
     --focus-on=never \
     --input-default-bindings=no \
     --input-vo-keyboard=no \
-    --geometry=300x300-30-40 \
+    --geometry=405x230-30-40 \
     --title="CamPreview" \
     --vf="$VF"
   ;;
