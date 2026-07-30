@@ -126,6 +126,11 @@ static const Rule rules[] = {
     { "Music Preview", NULL, NULL, 0, 1, 0, 1, -1 },
     { "Wallpaper Picker", NULL, NULL, 1, 0, -1 },
     { NULL, NULL, "Welcome", 0, 1, -1 },
+    { "wmgtemp",   NULL, NULL, 0, 1, -1 },
+    { "DockApp",   NULL, NULL, 0, 1, -1 },
+    { "wmbattery", NULL, NULL, 0, 1, -1 },
+    { "WMClock",   NULL, NULL, 0, 1, -1 },
+    { "Dockapps",  NULL,      NULL,       0,            1,          -1 },
     { "WorldPainter", NULL, NULL, 0, 1, -1 },
     {"fzfmenu",NULL, NULL,        0, 1, 1, 1, -1},     /* fzf menu (any title) */
     {"mpv",    NULL, NULL,        0, 1, 0, 1, -1},     /* mpv video player */

@@ -16,88 +16,88 @@ mkdir -p "$PREVIEW_CACHE"
 # ── Refresh-only mode: reload cached colors + keyboard, no picker UI ──────────
 # Usage: gif-test --refresh   (single command, e.g. from .xinitrc)
 if [[ "$1" == "--refresh" ]]; then
-  ln -sf ~/.cache/wal/colors.Xresources ~/.Xresources
-  {
-    cat ~/.cache/wal/colors.Xresources
-    [ -f ~/.cache/wal/xrdb_extra ] && cat ~/.cache/wal/xrdb_extra
-    [ -f ~/.cache/wal/dmenu ] && cat ~/.cache/wal/dmenu
-  } >/tmp/xresources_combined.tmp
-  xrdb -load /tmp/xresources_combined.tmp
+	ln -sf ~/.cache/wal/colors.Xresources ~/.Xresources
+	{
+		cat ~/.cache/wal/colors.Xresources
+		[ -f ~/.cache/wal/xrdb_extra ] && cat ~/.cache/wal/xrdb_extra
+		[ -f ~/.cache/wal/dmenu ] && cat ~/.cache/wal/dmenu
+	} >/tmp/xresources_combined.tmp
+	xrdb -load /tmp/xresources_combined.tmp
 
-  if [ -f ~/.cache/wal/sequences ]; then
-    for pts in /dev/pts/*; do
-      [ -w "$pts" ] && cat ~/.cache/wal/sequences >"$pts" 2>/dev/null &
-    done
-    wait
-  fi
+	if [ -f ~/.cache/wal/sequences ]; then
+		for pts in /dev/pts/*; do
+			[ -w "$pts" ] && cat ~/.cache/wal/sequences >"$pts" 2>/dev/null &
+		done
+		wait
+	fi
 
-  if command -v kitty &>/dev/null; then
-    kitty @ --to unix:/tmp/kitty set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
-  fi
+	if command -v kitty &>/dev/null; then
+		kitty @ --to unix:/tmp/kitty set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
+	fi
 
-  ~/Linux_Config/Zed/zed-theme-wal/generate_theme &
-  if pgrep -x zed-editor >/dev/null; then
-    ~/Linux_Config/Zed/zed-theme-wal/generate_theme
-    pkill -x zed-editor
-    sleep 0.2
-    zeditor >/dev/null 2>&1 &
-  fi
+	~/Linux_Config/Zed/zed-theme-wal/generate_theme &
+	if pgrep -x zed-editor >/dev/null; then
+		~/Linux_Config/Zed/zed-theme-wal/generate_theme
+		pkill -x zed-editor
+		sleep 0.2
+		zeditor >/dev/null 2>&1 &
+	fi
 
-  exit 0
+	exit 0
 fi
 # ── Spawn kitty window ────────────────────────────────────────────────────────
 if [[ "$1" != "--inside" ]]; then
-  read -r SCREEN_W SCREEN_H < <(
-    xrandr --current | grep ' connected primary' |
-      grep -oP '\d+x\d+' | head -1 | tr 'x' ' '
-  )
-  [ -z "$SCREEN_W" ] && SCREEN_W=1920
-  [ -z "$SCREEN_H" ] && SCREEN_H=1080
+	read -r SCREEN_W SCREEN_H < <(
+		xrandr --current | grep ' connected primary' |
+			grep -oP '\d+x\d+' | head -1 | tr 'x' ' '
+	)
+	[ -z "$SCREEN_W" ] && SCREEN_W=1920
+	[ -z "$SCREEN_H" ] && SCREEN_H=1080
 
-  FONT_W=8
-  FONT_H=16
-  COLS=$((SCREEN_W * 72 / 100 / FONT_W))
-  [ "$COLS" -lt 100 ] && COLS=100
-  ROWS=$((SCREEN_H * 52 / 100 / FONT_H))
-  [ "$ROWS" -lt 20 ] && ROWS=20
-  POS_X=$(((SCREEN_W - COLS * FONT_W) / 2))
-  POS_Y=$(((SCREEN_H - ROWS * FONT_H) / 2))
+	FONT_W=8
+	FONT_H=16
+	COLS=$((SCREEN_W * 72 / 100 / FONT_W))
+	[ "$COLS" -lt 100 ] && COLS=100
+	ROWS=$((SCREEN_H * 52 / 100 / FONT_H))
+	[ "$ROWS" -lt 20 ] && ROWS=20
+	POS_X=$(((SCREEN_W - COLS * FONT_W) / 2))
+	POS_Y=$(((SCREEN_H - ROWS * FONT_H) / 2))
 
-  SELF="$(realpath "$0")"
-  WAL_SEQ="$HOME/.cache/wal/sequences"
-  WAL_KITTY="$HOME/.cache/wal/colors-kitty.conf"
+	SELF="$(realpath "$0")"
+	WAL_SEQ="$HOME/.cache/wal/sequences"
+	WAL_KITTY="$HOME/.cache/wal/colors-kitty.conf"
 
-  KITTY_CONF="/tmp/walpicker_kitty_$$.conf"
-  printf '# wal colors\n' >"$KITTY_CONF"
-  [ -f "$WAL_KITTY" ] && cat "$WAL_KITTY" >>"$KITTY_CONF"
-  printf 'font_size 11\n' >>"$KITTY_CONF"
-  printf 'confirm_os_window_close 0\n' >>"$KITTY_CONF"
-  printf 'initial_window_width %sc\n' "$COLS" >>"$KITTY_CONF"
-  printf 'initial_window_height %sc\n' "$ROWS" >>"$KITTY_CONF"
-  printf 'remember_window_size no\n' >>"$KITTY_CONF"
-  printf 'placement_strategy top-left\n' >>"$KITTY_CONF"
+	KITTY_CONF="/tmp/walpicker_kitty_$$.conf"
+	printf '# wal colors\n' >"$KITTY_CONF"
+	[ -f "$WAL_KITTY" ] && cat "$WAL_KITTY" >>"$KITTY_CONF"
+	printf 'font_size 11\n' >>"$KITTY_CONF"
+	printf 'confirm_os_window_close 0\n' >>"$KITTY_CONF"
+	printf 'initial_window_width %sc\n' "$COLS" >>"$KITTY_CONF"
+	printf 'initial_window_height %sc\n' "$ROWS" >>"$KITTY_CONF"
+	printf 'remember_window_size no\n' >>"$KITTY_CONF"
+	printf 'placement_strategy top-left\n' >>"$KITTY_CONF"
 
-  LAUNCHER="/tmp/walpicker_$$.sh"
-  printf '#!/usr/bin/env bash\n' >"$LAUNCHER"
-  printf '[ -f "%s" ] && cat "%s" 2>/dev/null\n' "$WAL_SEQ" "$WAL_SEQ" >>"$LAUNCHER"
-  printf 'exec "%s" --inside\n' "$SELF" >>"$LAUNCHER"
-  chmod +x "$LAUNCHER"
+	LAUNCHER="/tmp/walpicker_$$.sh"
+	printf '#!/usr/bin/env bash\n' >"$LAUNCHER"
+	printf '[ -f "%s" ] && cat "%s" 2>/dev/null\n' "$WAL_SEQ" "$WAL_SEQ" >>"$LAUNCHER"
+	printf 'exec "%s" --inside\n' "$SELF" >>"$LAUNCHER"
+	chmod +x "$LAUNCHER"
 
-  exec kitty \
-    --class "wal-picker" \
-    --title "Wallpaper Picker" \
-    --override "initial_window_x=${POS_X}" \
-    --override "initial_window_y=${POS_Y}" \
-    --config "$KITTY_CONF" \
-    -e "$LAUNCHER"
+	exec kitty \
+		--class "wal-picker" \
+		--title "Wallpaper Picker" \
+		--override "initial_window_x=${POS_X}" \
+		--override "initial_window_y=${POS_Y}" \
+		--config "$KITTY_CONF" \
+		-e "$LAUNCHER"
 fi
 shift
 
 # ── Ueberzugpp ───────────────────────────────────────────────────────────────
 UB_PID_FILE="/tmp/.wal_$$"
 cleanup() {
-  ueberzugpp cmd -s "$SOCKET" -a exit 2>/dev/null
-  rm -f "$UB_PID_FILE" /tmp/walpicker_*.sh /tmp/walpicker_kitty_*.conf 2>/dev/null
+	ueberzugpp cmd -s "$SOCKET" -a exit 2>/dev/null
+	rm -f "$UB_PID_FILE" /tmp/walpicker_*.sh /tmp/walpicker_kitty_*.conf 2>/dev/null
 }
 trap cleanup EXIT HUP INT QUIT TERM
 
@@ -107,53 +107,53 @@ export SOCKET="/tmp/ueberzugpp-${UB_PID}.socket"
 
 # ── DWM / environment refresh ─────────────────────────────────────────────────
 refresh_dwm() {
-  # Symlink and combine all Xresources, load atomically
-  ln -sf ~/.cache/wal/colors.Xresources ~/.Xresources
-  {
-    cat ~/.cache/wal/colors.Xresources
-    [ -f ~/.cache/wal/xrdb_extra ] && cat ~/.cache/wal/xrdb_extra
-    [ -f ~/.cache/wal/dmenu ] && cat ~/.cache/wal/dmenu
-  } >/tmp/xresources_combined.tmp
-  xrdb -load /tmp/xresources_combined.tmp
+	# Symlink and combine all Xresources, load atomically
+	ln -sf ~/.cache/wal/colors.Xresources ~/.Xresources
+	{
+		cat ~/.cache/wal/colors.Xresources
+		[ -f ~/.cache/wal/xrdb_extra ] && cat ~/.cache/wal/xrdb_extra
+		[ -f ~/.cache/wal/dmenu ] && cat ~/.cache/wal/dmenu
+	} >/tmp/xresources_combined.tmp
+	xrdb -load /tmp/xresources_combined.tmp
 
-  # Trigger DWM xrdb reload and refresh dwmblocks
-  xdotool key super+ctrl+x
-  pkill -RTMIN+8 dwmblocks 2>/dev/null || true
-  pkill -RTMIN+10 dwmblocks 2>/dev/null || true
+	# Trigger DWM xrdb reload and refresh dwmblocks
+	xdotool key super+ctrl+x
+	pkill -RTMIN+8 dwmblocks 2>/dev/null || true
+	pkill -RTMIN+10 dwmblocks 2>/dev/null || true
 
-  # Apply wal sequences to all running terminals
-  if [ -f ~/.cache/wal/sequences ]; then
-    for pts in /dev/pts/*; do
-      [ -w "$pts" ] && cat ~/.cache/wal/sequences >"$pts" 2>/dev/null &
-    done
-    wait
-  fi
+	# Apply wal sequences to all running terminals
+	if [ -f ~/.cache/wal/sequences ]; then
+		for pts in /dev/pts/*; do
+			[ -w "$pts" ] && cat ~/.cache/wal/sequences >"$pts" 2>/dev/null &
+		done
+		wait
+	fi
 
-  # Reload kitty color scheme on all running instances
-  if command -v kitty &>/dev/null; then
-    kitty @ set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
-  fi
+	# Reload kitty color scheme on all running instances
+	if command -v kitty &>/dev/null; then
+		kitty @ set-colors --all ~/.cache/wal/colors-kitty.conf 2>/dev/null || true
+	fi
 
-  # Trigger Zed Theme Reload
-  ~/Linux_Config/Zed/zed-theme-wal/generate_theme &
+	# Trigger Zed Theme Reload
+	~/Linux_Config/Zed/zed-theme-wal/generate_theme &
 
-  # Restart Zed to appy colour
-  if pgrep -x zed-editor >/dev/null; then
-    ~/Linux_Config/Zed/zed-theme-wal/generate_theme
-    pkill -x zed-editor
-    sleep 0.2
-    zeditor >/dev/null 2>&1 &
-  fi
+	# Restart Zed to appy colour
+	if pgrep -x zed-editor >/dev/null; then
+		~/Linux_Config/Zed/zed-theme-wal/generate_theme
+		pkill -x zed-editor
+		sleep 0.2
+		zeditor >/dev/null 2>&1 &
+	fi
 }
 
 set_static() {
-  feh --bg-scale "$1"
+	feh --bg-scale "$1"
 }
 
 # ── Color post-processing (inlined, replaces process-wal-colors) ──────────────
 process_wal_colors() {
-  # Args: bg_l bg_s other_l other_s [vibrant]
-  python3 - "$1" "$2" "$3" "$4" "${5:-}" <<'PYEOF'
+	# Args: bg_l bg_s other_l other_s [vibrant]
+	python3 - "$1" "$2" "$3" "$4" "${5:-}" <<'PYEOF'
 import colorsys, json, re, sys
 from pathlib import Path
 
@@ -236,10 +236,10 @@ PYEOF
 
 # ── Sync keyboard backlight to a darkened, saturated accent color ─────────────
 sync_keyboard_color() {
-  local colors_json="$HOME/.cache/wal/colors.json"
-  [ -f "$colors_json" ] || return
-  local accent
-  accent=$(python3 -c "
+	local colors_json="$HOME/.cache/wal/colors.json"
+	[ -f "$colors_json" ] || return
+	local accent
+	accent=$(python3 -c "
 import colorsys, json
 from pathlib import Path
 try:
@@ -254,17 +254,17 @@ try:
 except Exception:
     pass
 ")
-  [ -n "$accent" ] || return
-  asusctl -k low >/dev/null 2>&1
-  asusctl aura effect static -c "$accent" >/dev/null 2>&1
+	[ -n "$accent" ] || return
+	asusctl -k low >/dev/null 2>&1
+	asusctl aura effect static -c "$accent" >/dev/null 2>&1
 }
 
 # ── Sync ZenNotes custom theme (drop-in, hot-reloads — no app restart) ────────
 sync_zennotes_theme() {
-  local colors_json="$HOME/.cache/wal/colors.json"
-  [ -f "$colors_json" ] || return
+	local colors_json="$HOME/.cache/wal/colors.json"
+	[ -f "$colors_json" ] || return
 
-  python3 - "$colors_json" "$ZEN_THEME_DIR" <<'PYEOF'
+	python3 - "$colors_json" "$ZEN_THEME_DIR" <<'PYEOF'
 import colorsys, json, sys
 from pathlib import Path
 
@@ -373,89 +373,115 @@ PYEOF
 
 # ── Apply wallpaper + colors ──────────────────────────────────────────────────
 apply() {
-  local file="$1" backend="$2" mode="${3:-dark}"
+	local file="$1" backend="$2" mode="${3:-dark}"
 
-  set_static "$file"
-  case "$mode" in
-  light)
-    wal -i "$file" -l --backend "$backend" -t -n -q
-    process_wal_colors 0.05 0.0 0.2 0.3
-    ;;
-  medium)
-    wal -i "$file" --backend "$backend" -t -n -q
-    process_wal_colors 0.0 2.0 0.02 2.0 vibrant
-    ;;
-  *)
-    wal -i "$file" --backend "$backend" -t -n -q
-    ;;
-  esac
+	set_static "$file"
 
-  sync_keyboard_color
-  sync_zennotes_theme
+	case "$mode" in
+	light)
+		# Bright version of dark mode (NOT pywal's white light mode)
+		wal -i "$file" --backend "$backend" -t -n -q
 
-  for sock in "$XDG_RUNTIME_DIR"/nvim.*.0; do
-    [ -S "$sock" ] && nvim --server "$sock" --remote-send ':colorscheme wal<CR>' 2>/dev/null
-  done
+		process_wal_colors \
+			-0.18 0.25 \
+			-0.10 0.20 \
+			vibrant
+		;;
 
-  refresh_dwm
-  echo "$file" >"$WAL_LAST"
-  notify-send "Wallpaper" "$(basename "$file") [$mode]" -t 3000
+	medium)
+		wal -i "$file" --backend "$backend" -t -n -q
+
+		process_wal_colors \
+			0.0 2.0 \
+			0.02 2.0 \
+			vibrant
+		;;
+
+	*)
+		wal -i "$file" --backend "$backend" -t -n -q
+		;;
+	esac
+
+	sync_keyboard_color
+	sync_zennotes_theme
+
+	for sock in "$XDG_RUNTIME_DIR"/nvim.*.0; do
+		[ -S "$sock" ] &&
+			nvim --server "$sock" --remote-send ':colorscheme wal<CR>' 2>/dev/null
+	done
+
+	refresh_dwm
+	echo "$file" >"$WAL_LAST"
+	notify-send "Wallpaper" "$(basename "$file") [$mode]" -t 3000
 }
 
 # ── Apply theme only (no wallpaper change) ────────────────────────────────────
 apply_theme() {
-  local theme="$1" mode="${2:-dark}"
-  echo "$theme $mode" >"$HOME/.cache/wal/last_theme"
+	local theme="$1" mode="${2:-dark}"
 
-  case "$mode" in
-  light)
-    wal --theme "$theme" -l -t -n -q
-    process_wal_colors 0.05 0.0 -0.15 0.3
-    ;;
-  medium)
-    wal --theme "$theme" -t -n -q
-    process_wal_colors 0.0 2.0 0.0 2.0 vibrant
-    ;;
-  *)
-    wal --theme "$theme" -t -n -q
-    ;;
-  esac
-  sync_keyboard_color
-  sync_zennotes_theme
+	echo "$theme $mode" >"$HOME/.cache/wal/last_theme"
 
-  refresh_dwm
-  notify-send "Theme" "$theme [$mode]" -t 3000
+	case "$mode" in
+	light)
+		# Bright version of dark mode (NOT pywal's white light mode)
+		wal --theme "$theme" -t -n -q
+
+		process_wal_colors \
+			-0.18 0.25 \
+			-0.10 0.20 \
+			vibrant
+		;;
+
+	medium)
+		wal --theme "$theme" -t -n -q
+
+		process_wal_colors \
+			0.0 2.0 \
+			0.02 2.0 \
+			vibrant
+		;;
+
+	*)
+		wal --theme "$theme" -t -n -q
+		;;
+	esac
+
+	sync_keyboard_color
+	sync_zennotes_theme
+
+	refresh_dwm
+	notify-send "Theme" "$theme [$mode]" -t 3000
 }
 
 # ── Theme picker (Ctrl+T) ─────────────────────────────────────────────────────
 # Preview just reads colors.json — zero wal invocations, so ueberzugpp stays stable
 pick_theme() {
-  wal --theme 2>/dev/null |
-    grep -oP '(?<=- )[\w.-]+' |
-    sort |
-    fzf \
-      --no-sort \
-      --reverse \
-      --style=full \
-      --border=sharp \
-      --border-label=" Theme Picker " \
-      --border-label-pos=2 \
-      --no-scrollbar \
-      --padding="0,0" \
-      --prompt=" λ " \
-      --pointer="▌" \
-      --marker="●" \
-      --input-label=" search " \
-      --preview-label=" [mode: $MODE]  ctrl-l:cycle mode  esc:back " \
-      --preview-border=sharp \
-      --info=right \
-      --color="bg:-1,bg+:#161916,fg:#888880,fg+:#c0c0ba" \
-      --color="hl:#6a7d5e,hl+:#8aaa74" \
-      --color="border:#333630,preview-border:#333630" \
-      --color="prompt:#8aaa74,pointer:#8aaa74,marker:#6a7d5e" \
-      --color="input-label:#3a4436,preview-label:#3a4436,label:#3a4436" \
-      --color="info:#3a4436,spinner:#8aaa74" \
-      --preview="
+	wal --theme 2>/dev/null |
+		grep -oP '(?<=- )[\w.-]+' |
+		sort |
+		fzf \
+			--no-sort \
+			--reverse \
+			--style=full \
+			--border=sharp \
+			--border-label=" Theme Picker " \
+			--border-label-pos=2 \
+			--no-scrollbar \
+			--padding="0,0" \
+			--prompt=" λ " \
+			--pointer="▌" \
+			--marker="●" \
+			--input-label=" search " \
+			--preview-label=" [mode: $MODE]  ctrl-l:cycle mode  esc:back " \
+			--preview-border=sharp \
+			--info=right \
+			--color="bg:-1,bg+:#161916,fg:#888880,fg+:#c0c0ba" \
+			--color="hl:#6a7d5e,hl+:#8aaa74" \
+			--color="border:#333630,preview-border:#333630" \
+			--color="prompt:#8aaa74,pointer:#8aaa74,marker:#6a7d5e" \
+			--color="input-label:#3a4436,preview-label:#3a4436,label:#3a4436" \
+			--color="info:#3a4436,spinner:#8aaa74" \
+			--preview="
         theme={};
         # Apply theme quietly so colors.json is fresh for the swatch
         wal --theme \"\$theme\" -t -n -q 2>/dev/null;
@@ -490,9 +516,9 @@ except Exception as e:
     print('no colors.json yet')
 \" 2>/dev/null
       " \
-      --preview-window="right:55%:nowrap" \
-      --bind="ctrl-l:become(echo __TOGGLE_MODE__)" \
-      --bind="esc:become(echo __BACK__)"
+			--preview-window="right:55%:nowrap" \
+			--bind="ctrl-l:become(echo __TOGGLE_MODE__)" \
+			--bind="esc:become(echo __BACK__)"
 }
 
 export SOCKET PREVIEW_CACHE
@@ -501,37 +527,37 @@ export SOCKET PREVIEW_CACHE
 MODE="dark"
 
 while true; do
-  BACKEND="${BACKENDS[$BACKEND_IDX]}"
-  PLABEL=" ${BACKEND}  [${MODE}]  ctrl-b:backend  ctrl-l:mode  ctrl-t:theme  ctrl-r:random  esc:quit "
+	BACKEND="${BACKENDS[$BACKEND_IDX]}"
+	PLABEL=" ${BACKEND}  [${MODE}]  ctrl-b:backend  ctrl-l:mode  ctrl-t:theme  ctrl-r:random  esc:quit "
 
-  IMG=$(
-    find -L "$WALL_DIR" -type f \( \
-      -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
-      \) | sort | while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(basename "$f")"; done | fzf \
-      --no-sort \
-      --reverse \
-      --style=full \
-      --border=sharp \
-      --border-label=" Wallpaper Picker " \
-      --border-label-pos=2 \
-      --no-scrollbar \
-      --padding="0,0" \
-      --prompt=" λ " \
-      --pointer="▌" \
-      --marker="●" \
-      --input-label=" search " \
-      --preview-label="$PLABEL" \
-      --preview-border=sharp \
-      --info=right \
-      --delimiter='\t' \
-      --with-nth=2 \
-      --color="bg:-1,bg+:#161916,fg:#888880,fg+:#c0c0ba" \
-      --color="hl:#6a7d5e,hl+:#8aaa74" \
-      --color="border:#333630,preview-border:#333630" \
-      --color="prompt:#8aaa74,pointer:#8aaa74,marker:#6a7d5e" \
-      --color="input-label:#3a4436,preview-label:#3a4436,label:#3a4436" \
-      --color="info:#3a4436,spinner:#8aaa74" \
-      --preview="
+	IMG=$(
+		find -L "$WALL_DIR" -type f \( \
+			-iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
+			\) | sort | while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(basename "$f")"; done | fzf \
+			--no-sort \
+			--reverse \
+			--style=full \
+			--border=sharp \
+			--border-label=" Wallpaper Picker " \
+			--border-label-pos=2 \
+			--no-scrollbar \
+			--padding="0,0" \
+			--prompt=" λ " \
+			--pointer="▌" \
+			--marker="●" \
+			--input-label=" search " \
+			--preview-label="$PLABEL" \
+			--preview-border=sharp \
+			--info=right \
+			--delimiter='\t' \
+			--with-nth=2 \
+			--color="bg:-1,bg+:#161916,fg:#888880,fg+:#c0c0ba" \
+			--color="hl:#6a7d5e,hl+:#8aaa74" \
+			--color="border:#333630,preview-border:#333630" \
+			--color="prompt:#8aaa74,pointer:#8aaa74,marker:#6a7d5e" \
+			--color="input-label:#3a4436,preview-label:#3a4436,label:#3a4436" \
+			--color="info:#3a4436,spinner:#8aaa74" \
+			--preview="
         file={1};
         ueberzugpp cmd -s \"$SOCKET\" -i walpreview -a add \
           -x \$(( FZF_PREVIEW_LEFT + 4 )) \
@@ -540,66 +566,66 @@ while true; do
           --max-height 15 \
           -f \"\$file\" 2>/dev/null
       " \
-      --preview-window="right:55%:nowrap" \
-      --bind="ctrl-b:become(echo __NEXT_BACKEND__)" \
-      --bind="ctrl-l:become(echo __NEXT_MODE__)" \
-      --bind="ctrl-t:become(echo __THEME_PICKER__)" \
-      --bind="ctrl-r:become(echo __RANDOM__)" \
-      --bind="esc:become(echo __QUIT__)" |
-      cut -f1
-  )
+			--preview-window="right:55%:nowrap" \
+			--bind="ctrl-b:become(echo __NEXT_BACKEND__)" \
+			--bind="ctrl-l:become(echo __NEXT_MODE__)" \
+			--bind="ctrl-t:become(echo __THEME_PICKER__)" \
+			--bind="ctrl-r:become(echo __RANDOM__)" \
+			--bind="esc:become(echo __QUIT__)" |
+			cut -f1
+	)
 
-  case "$IMG" in
-  __QUIT__ | "") exit 0 ;;
+	case "$IMG" in
+	__QUIT__ | "") exit 0 ;;
 
-  __NEXT_BACKEND__)
-    BACKEND_IDX=$(((BACKEND_IDX + 1) % ${#BACKENDS[@]}))
-    continue
-    ;;
+	__NEXT_BACKEND__)
+		BACKEND_IDX=$(((BACKEND_IDX + 1) % ${#BACKENDS[@]}))
+		continue
+		;;
 
-  __NEXT_MODE__)
-    case "$MODE" in
-    dark) MODE="light" ;;
-    light) MODE="medium" ;;
-    medium) MODE="dark" ;;
-    esac
-    notify-send "Wallpaper Picker" "Mode → $MODE" -t 1200
-    continue
-    ;;
+	__NEXT_MODE__)
+		case "$MODE" in
+		dark) MODE="light" ;;
+		light) MODE="medium" ;;
+		medium) MODE="dark" ;;
+		esac
+		notify-send "Wallpaper Picker" "Mode → $MODE" -t 1200
+		continue
+		;;
 
-  __THEME_PICKER__)
-    THEME=$(pick_theme)
-    case "$THEME" in
-    "" | __BACK__)
-      continue
-      ;;
-    __TOGGLE_MODE__)
-      case "$MODE" in
-      dark) MODE="light" ;;
-      light) MODE="medium" ;;
-      medium) MODE="dark" ;;
-      esac
-      notify-send "Wallpaper Picker" "Mode → $MODE" -t 1200
-      continue
-      ;;
-    *)
-      apply_theme "$THEME" "$MODE"
-      exit 0
-      ;;
-    esac
-    ;;
+	__THEME_PICKER__)
+		THEME=$(pick_theme)
+		case "$THEME" in
+		"" | __BACK__)
+			continue
+			;;
+		__TOGGLE_MODE__)
+			case "$MODE" in
+			dark) MODE="light" ;;
+			light) MODE="medium" ;;
+			medium) MODE="dark" ;;
+			esac
+			notify-send "Wallpaper Picker" "Mode → $MODE" -t 1200
+			continue
+			;;
+		*)
+			apply_theme "$THEME" "$MODE"
+			exit 0
+			;;
+		esac
+		;;
 
-  __RANDOM__)
-    IMG=$(find -L "$WALL_DIR" -type f \( \
-      -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
-      \) | shuf -n 1)
-    apply "$IMG" "$BACKEND" "$MODE"
-    exit 0
-    ;;
+	__RANDOM__)
+		IMG=$(find -L "$WALL_DIR" -type f \( \
+			-iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" \
+			\) | shuf -n 1)
+		apply "$IMG" "$BACKEND" "$MODE"
+		exit 0
+		;;
 
-  *)
-    apply "$IMG" "$BACKEND" "$MODE"
-    exit 0
-    ;;
-  esac
+	*)
+		apply "$IMG" "$BACKEND" "$MODE"
+		exit 0
+		;;
+	esac
 done
