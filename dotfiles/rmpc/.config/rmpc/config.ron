@@ -9,7 +9,7 @@
     cache_dir: Some("/home/atego/.cache/rmpc"),
     on_song_change: ["pkill -RTMIN+11 dwmblocks", "pkill -USR1 mpd-discord-rpc"],
     volume_step: 5,
-    max_fps: 30,
+    max_fps: 165,
     scrolloff: 0,
     wrap_navigation: false,
     enable_mouse: true,
@@ -33,7 +33,7 @@
         horizontal_align: Center,
     ),
     cava: (
-        framerate: 60, // default 60
+        framerate: 165, // default 60
         autosens: true, // default true
         sensitivity: 100, // default 100
         lower_cutoff_freq: 50, // not passed to cava if not provided

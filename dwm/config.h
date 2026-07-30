@@ -247,10 +247,10 @@ static const Key keys[] = {
     {MODKEY,                           XK_b,     spawn, {.v = (const char *[]) {BROWSER, NULL}}}, // BROWSER
     {MODKEY,                           XK_d,     spawn, {.v = (const char *[]) {"vesktop", NULL}}}, // DISCORD
     {MODKEY,                           XK_e,     spawn, {.v = (const char *[]) {"emacsclient", "-c", NULL}}}, // DOOM EMACS
+    {MODKEY | ShiftMask,               XK_e,     spawn, SHCMD("emacsclient --eval '(emacs-everywhere)'")}, // emacs everywhere
     {MODKEY | ShiftMask,               XK_b,     spawn, {.v = (const char *[]) {"kitty", "-e", "btop", NULL}}}, // STATISTIC SCREEN
     {MODKEY,                           XK_c,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/custom-helpers/cal-check", NULL}}}, // CALLENDAR CHECKER
-    {MODKEY | ShiftMask,               XK_n,     spawn, {.v = (const char *[]) {"kitty", "-e", "nvim", NULL}}}, // NVIM
-    {MODKEY,                           XK_n,     spawn, {.v = (const char *[]) {"zennotes", NULL}}}, // ZEN NOTES
+    {MODKEY,                           XK_n,     spawn, {.v = (const char *[]) {"kitty", "-e", "nvim", NULL}}}, // NVIM
     {MODKEY | ShiftMask,               XK_f,     spawn, {.v = (const char *[]) {"nautilus", NULL}}}, // NAUTILOUS
     {MODKEY | ShiftMask,               XK_r,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/audio-video/screenrecord", "toggle", NULL}}}, // SCREEN RECORD
     {MODKEY | ShiftMask,               XK_w,     spawn, {.v = (const char *[]) {HOME "/.config/scripts/images-photos-wallpapers/gif-test", NULL}}}, // WALLPAPER PICKER

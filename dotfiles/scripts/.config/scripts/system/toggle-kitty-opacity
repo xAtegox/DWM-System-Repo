@@ -1,31 +1,62 @@
 #!/bin/bash
-# Toggle picom window transparency for kitty and st terminals
-# Toggles between 100% (opaque) and 85% (transparent)
 
-if ! pgrep -x "picom" >/dev/null; then
-  exit 1
+# Toggle picom window transparency + sync Emacs state
+
+STATE="/tmp/transparency-state"
+PERSISTENT="$HOME/.cache/transparency-state"
+
+mkdir -p "$HOME/.cache"
+
+# Initialize state
+if [ ! -f "$STATE" ]; then
+	if [ -f "$PERSISTENT" ]; then
+		cp "$PERSISTENT" "$STATE"
+	else
+		echo "transparent" >"$STATE"
+		cp "$STATE" "$PERSISTENT"
+	fi
 fi
 
-# Collect all kitty and st windows
+# Check picom
+if ! pgrep -x "picom" >/dev/null; then
+	exit 1
+fi
+
+# Collect windows
 kitty_windows=$(xdotool search --class "kitty" 2>/dev/null)
 st_windows=$(xdotool search --class "st-256color" 2>/dev/null)
-all_windows=$(printf "%s\n%s" "$kitty_windows" "$st_windows" | grep -v '^$')
+emacs_windows=$(xdotool search --class "Emacs" 2>/dev/null)
+
+all_windows=$(printf "%s\n%s" "$kitty_windows" "$st_windows" "$emacs_windows" | grep -v '^$')
 
 if [ -z "$all_windows" ]; then
-  exit 1
+	exit 1
 fi
 
-# Check current opacity from the first available window
+# Read current opacity
 first_window=$(echo "$all_windows" | head -1)
+
 current_opacity=$(xprop -id "$first_window" _NET_WM_WINDOW_OPACITY 2>/dev/null | grep -oE '[0-9]+$')
 
 if [ -z "$current_opacity" ] || [ "$current_opacity" -gt 3865470976 ]; then
-  opacity_uint32=$((75 * 42949672))
+	# Make transparent
+	opacity_uint32=$((85 * 42949672))
+
+	echo "transparent" >"$STATE"
+	cp "$STATE" "$PERSISTENT"
+
 else
-  opacity_uint32=$((100 * 42949672))
+	# Make opaque
+	opacity_uint32=$((100 * 42949672))
+
+	echo "opaque" >"$STATE"
+	cp "$STATE" "$PERSISTENT"
 fi
 
-# Apply to all windows
+# Apply to kitty + st
 echo "$all_windows" | while read -r window_id; do
-  xprop -id "$window_id" -f _NET_WM_WINDOW_OPACITY 32c -set _NET_WM_WINDOW_OPACITY "$opacity_uint32" 2>/dev/null
+	xprop -id "$window_id" \
+		-f _NET_WM_WINDOW_OPACITY 32c \
+		-set _NET_WM_WINDOW_OPACITY "$opacity_uint32" \
+		2>/dev/null
 done
