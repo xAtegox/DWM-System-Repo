@@ -87,7 +87,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm, SchemeNotchSel, SchemeNotchNorm }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetWMSticky, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms (extended window manager hints) */
@@ -114,6 +114,8 @@ typedef struct Monitor Monitor;
 typedef struct Client Client;
 struct Client { /* a window that dwm is managing */
 	char name[256]; /* window's title as shown in bar */
+	char notchlabel[256]; /* text shown on the maximalist-mode notch */
+	int staticlabel; /* if 1, notchlabel is fixed and not overwritten by updatetitle() */
 	float mina, maxa; /* min and max aspect ratios when resizing windows */
 	int x, y, w, h; /* current pos of window */
 	int oldx, oldy, oldw, oldh; /* prev pos of window */
@@ -121,12 +123,15 @@ struct Client { /* a window that dwm is managing */
 	int bw, oldbw; /* current and prev border widths */
 	unsigned int tags; /* bitmasks for which tags window is visible on */
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, issticky, isterminal, noswallow; /* window states */
+	int wasfloating; /* floating state before maximalist mode forced it, restored on toggle-off */
+	int premaxbw; /* border width before maximalist mode forced it to 0 (kept separate from oldbw, which fullscreen already uses) */
 	pid_t pid; /* pid of application in window - useful for swallowing */
 	Client *next; /* next client, in the linked list of all clients */
 	Client *snext; /* next in the STACK */
 	Client *swallowing; /* points to the client this one is swallowing (swallow patch) */
 	Monitor *mon; /* the monitor this client is on */
 	Window win; /* X11 win id */
+	Window twin; /* notch/title decoration window (maximalist mode) */
 };
 
 typedef struct { /* key press interactions */
@@ -181,6 +186,7 @@ typedef struct {
 	int isterminal;
 	int noswallow;
 	int monitor;
+	const char *staticlabel; /* NULL = use window title; otherwise fixed notch text */
 } Rule;
 
 
@@ -200,12 +206,16 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void createnotch(Client *c);
 static void destroynotify(XEvent *e);
+static void destroynotch(Client *c);
 static void detach(Client *c);
 static void detachstack(Client *c);
 static Monitor *dirtomon(int dir);
 static void drawbar(Monitor *m);
 static void drawbars(void);
+static void drawnotch(Client *c);
+static void drawnotches(void);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
@@ -270,6 +280,7 @@ static void togglebarstatus(const Arg *arg);
 static void togglebarfloat(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglefullscreen(const Arg *arg);
+static void togglemaximalist(const Arg *arg);
 static void togglesticky(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
@@ -281,6 +292,8 @@ static void updatebars(void);
 static void updateclientlist(void);
 static int updategeom(void);
 static void updatenumlockmask(void);
+static void updatenotchpos(Client *c);
+static void ensurenotchroom(Client *c);
 static void updatesizehints(Client *c);
 static void updatestatus(void);
 static void updatetitle(Client *c);
@@ -339,6 +352,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static int maximalistmode = 0;
 
 static xcb_connection_t *xcon;
 
@@ -403,6 +417,11 @@ applyrules(Client *c)
 			c->noswallow  = r->noswallow;
 			c->isfloating = r->isfloating;
 			c->tags |= r->tags;
+			if (r->staticlabel) {
+				c->staticlabel = 1;
+				strncpy(c->notchlabel, r->staticlabel, sizeof c->notchlabel - 1);
+				c->notchlabel[sizeof c->notchlabel - 1] = '\0';
+			}
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -854,6 +873,63 @@ createmon(void)
 }
 
 void
+createnotch(Client *c)
+{
+	XSetWindowAttributes wa = {
+		.override_redirect = True,
+		.background_pixmap = ParentRelative,
+		.event_mask = ButtonPressMask|ExposureMask
+	};
+
+	c->twin = XCreateWindow(dpy, root, c->x, c->y - bh, MAX((int)c->w, 1), bh, 0,
+		DefaultDepth(dpy, screen), CopyFromParent, DefaultVisual(dpy, screen),
+		CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
+	XDefineCursor(dpy, c->twin, cursor[CurNormal]->cursor);
+	if (!c->staticlabel) {
+		strncpy(c->notchlabel, c->name, sizeof c->notchlabel - 1);
+		c->notchlabel[sizeof c->notchlabel - 1] = '\0';
+	}
+	if (maximalistmode) {
+		ensurenotchroom(c);
+		XMapRaised(dpy, c->twin);
+		drawnotch(c);
+	}
+}
+
+void
+destroynotch(Client *c)
+{
+	if (!c->twin)
+		return;
+	XUnmapWindow(dpy, c->twin);
+	XDestroyWindow(dpy, c->twin);
+	c->twin = 0;
+}
+
+void
+updatenotchpos(Client *c)
+{
+	if (!c->twin)
+		return;
+	XMoveResizeWindow(dpy, c->twin, c->x, c->y - bh, MAX((int)c->w, 1), bh);
+}
+
+void
+ensurenotchroom(Client *c)
+{
+	int miny;
+
+	if (!maximalistmode || !c->twin || c->isfullscreen)
+		return;
+
+	miny = c->mon->my + bh; /* leave room for the notch above the window */
+	if (c->y < miny)
+		resize(c, c->x, miny, c->w, c->h, 0); /* triggers resizeclient() -> updatenotchpos() */
+	else
+		updatenotchpos(c);
+}
+
+void
 destroynotify(XEvent *e)
 {
 	Client *c;
@@ -997,6 +1073,33 @@ drawbars(void)
 }
 
 void
+drawnotch(Client *c)
+{
+	unsigned int w;
+
+	if (!c->twin)
+		return;
+
+	w = MAX((int)c->w, 1);
+	drw_setscheme(drw, scheme[c == c->mon->sel ? SchemeNotchSel : SchemeNotchNorm]);
+	drw_text(drw, 0, 0, w, bh, lrpad / 2, c->notchlabel, 0);
+	drw_map(drw, c->twin, 0, 0, w, bh);
+}
+
+void
+drawnotches(void)
+{
+	Client *c;
+	Monitor *m;
+
+	if (!maximalistmode)
+		return;
+	for (m = mons; m; m = m->next)
+		for (c = m->clients; c; c = c->next)
+			drawnotch(c);
+}
+
+void
 enternotify(XEvent *e)
 {
 	Client *c;
@@ -1054,6 +1157,7 @@ focus(Client *c)
 		selmon->sel = c;
 	}
 	drawbars(); /* redraw statusbar */
+	drawnotches();
 }
 
 /* there are some broken focus acquiring clients needing extra handling */
@@ -1417,6 +1521,7 @@ manage(Window w, XWindowAttributes *wa)
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
 	configure(c); /* propagates border_width, if size doesn't change */
+	createnotch(c);
 	updatewindowtype(c);
 	updatesizehints(c);
 	updatewmhints(c);
@@ -1610,6 +1715,12 @@ propertynotify(XEvent *e)
 			updatetitle(c);
 			if (c == c->mon->sel && selmon->showtitle)
 				drawbar(c->mon);
+			if (!c->staticlabel) {
+				strncpy(c->notchlabel, c->name, sizeof c->notchlabel - 1);
+				c->notchlabel[sizeof c->notchlabel - 1] = '\0';
+			}
+			if (maximalistmode)
+				drawnotch(c);
 		}
 		if (ev->atom == netatom[NetWMWindowType])
 			updatewindowtype(c);
@@ -1690,6 +1801,7 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
+	updatenotchpos(c);
 	XSync(dpy, False);
 }
 
@@ -2058,6 +2170,8 @@ showhide(Client *c)
 	if (ISVISIBLE(c)) {
 		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
+		if (c->twin)
+			XMoveWindow(dpy, c->twin, c->x, c->y - bh);
 		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
 			resize(c, c->x, c->y, c->w, c->h, 0);
 		showhide(c->snext);
@@ -2065,6 +2179,8 @@ showhide(Client *c)
 		/* hide clients bottom up */
 		showhide(c->snext);
 		XMoveWindow(dpy, c->win, WIDTH(c) * -2, c->y);
+		if (c->twin)
+			XMoveWindow(dpy, c->twin, WIDTH(c) * -2, c->y - bh);
 	}
 }
 
@@ -2343,6 +2459,48 @@ togglefullscreen(const Arg *arg)
 }
 
 void
+togglemaximalist(const Arg *arg)
+{
+	Client *c;
+	Monitor *m;
+	XWindowChanges wc;
+
+	maximalistmode = !maximalistmode;
+
+	for (m = mons; m; m = m->next) {
+		for (c = m->clients; c; c = c->next) {
+			if (c->isfullscreen) /* leave fullscreen clients' bw/floating alone, just handle the notch below */
+				goto notch;
+
+			if (maximalistmode) {
+				c->wasfloating = c->isfloating;
+				c->isfloating = 1;
+				c->premaxbw = c->bw;
+				c->bw = 0;
+			} else {
+				c->isfloating = c->wasfloating;
+				c->bw = c->premaxbw;
+			}
+			wc.border_width = c->bw;
+			XConfigureWindow(dpy, c->win, CWBorderWidth, &wc);
+
+notch:
+			if (!c->twin)
+				continue;
+			if (maximalistmode) {
+				ensurenotchroom(c);
+				XMapRaised(dpy, c->twin);
+			} else {
+				XUnmapWindow(dpy, c->twin);
+			}
+		}
+		arrange(m);
+	}
+	focus(selmon->sel);
+	drawnotches();
+}
+
+void
 toggletag(const Arg *arg)
 {
 	unsigned int newtags;
@@ -2417,6 +2575,7 @@ unmanage(Client *c, int destroyed)
 		XSetErrorHandler(xerror);
 		XUngrabServer(dpy);
 	}
+	destroynotch(c);
 	free(c); /* free memory */
 
 	if (!s) { /* recalcs layout now that c is gone */
@@ -2929,6 +3088,7 @@ xrdb(const Arg *arg)
                 scheme[i] = drw_scm_create(drw, colors[i], 3);
   focus(NULL);
   arrange(NULL);
+  drawnotches();
 }
 
 void
