@@ -1548,11 +1548,6 @@ manage(Window w, XWindowAttributes *wa)
 		term = termforwin(c); /* tries to find a terminal for swallowing */
 		applyrules(c); /* apply any matching tag rules from config.h */
 	}
-	if (!c->isfloating)
-		c->isfloating = c->oldstate = trans != None || c->isfixed;
-	c->wasfloating = c->isfloating;
-	if (maximalistmode && !c->isfullscreen && !c->nomaximalist)
-		c->isfloating = 1;
 		/* ensure window fits to visible bounds of monitor */
 	if (c->x + WIDTH(c) > c->mon->wx + c->mon->ww)
 		c->x = c->mon->wx + c->mon->ww - WIDTH(c);
@@ -1568,10 +1563,6 @@ manage(Window w, XWindowAttributes *wa)
 	}
 	
 	c->bw = borderpx;
-	if (maximalistmode && !c->isfullscreen && !c->nomaximalist) {
-		c->premaxbw = c->bw;
-		c->bw = maximalistborderpx;
-	}
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
@@ -1583,6 +1574,16 @@ manage(Window w, XWindowAttributes *wa)
 	updatewmhints(c);
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, 0);
+	if (!c->isfloating)
+		c->isfloating = c->oldstate = trans != None || c->isfixed;
+	if (maximalistmode && !c->isfullscreen) {
+		c->wasfloating = c->isfloating;
+		c->isfloating = 1;
+		c->premaxbw = c->bw;
+		c->bw = 0;
+		wc.border_width = c->bw;
+		XConfigureWindow(dpy, c->win, CWBorderWidth, &wc);
+	}
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
 	attach(c); /* add to the monitor's client list */
