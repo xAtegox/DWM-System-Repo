@@ -1529,6 +1529,14 @@ manage(Window w, XWindowAttributes *wa)
 	grabbuttons(c, 0);
 	if (!c->isfloating)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
+	if (maximalistmode && !c->isfullscreen) {
+		c->wasfloating = c->isfloating;
+		c->isfloating = 1;
+		c->premaxbw = c->bw;
+		c->bw = 0;
+		wc.border_width = c->bw;
+		XConfigureWindow(dpy, c->win, CWBorderWidth, &wc);
+	}
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
 	attach(c); /* add to the monitor's client list */
@@ -1802,6 +1810,8 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
 	updatenotchpos(c);
+	if (c->oldw != c->w && maximalistmode)
+		drawnotch(c); /* content only needs a redraw when width actually changed, not on a plain move */
 	XSync(dpy, False);
 }
 
