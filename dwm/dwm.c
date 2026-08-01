@@ -128,6 +128,7 @@ struct Client { /* a window that dwm is managing */
 	int nomaximalist; /* if 1, this client is fully excluded from maximalist mode (no floating force, no notch) */
 	int isshaded; /* rolled up to just the notch, client content unmapped */
 	int ignoreunmap; /* count of our own pending XUnmapWindow calls to not mistake for the client closing */
+	int initx, inity, initw, inith; /* geometry as originally requested at manage()-time, before dwm's own layout touches it — used to restore proper position/size for windows floated late via maybefloat() */
 	pid_t pid; /* pid of application in window - useful for swallowing */
 	Client *next; /* next client, in the linked list of all clients */
 	Client *snext; /* next in the STACK */
@@ -480,7 +481,13 @@ maybefloat(Client *c)
 				strncpy(c->notchlabel, r->staticlabel, sizeof c->notchlabel - 1);
 				c->notchlabel[sizeof c->notchlabel - 1] = '\0';
 			}
-			resize(c, c->x, c->y, c->w, c->h, 0);
+			if (c->initx == 0 && c->inity == 0) {
+				resize(c, c->mon->wx + (c->mon->ww - WIDTH(c)) / 2,
+					c->mon->wy + (c->mon->wh - HEIGHT(c)) / 2,
+					c->initw, c->inith, 0);
+			} else {
+				resize(c, c->initx, c->inity, c->initw, c->inith, 0);
+			}
 			if (!c->twin && !c->nomaximalist)
 				createnotch(c);
 			else if (c->twin && c->nomaximalist)
@@ -1600,6 +1607,10 @@ manage(Window w, XWindowAttributes *wa)
 	c->w = c->oldw = wa->width;
 	c->h = c->oldh = wa->height;
 	c->oldbw = wa->border_width;
+	c->initx = wa->x;
+	c->inity = wa->y;
+	c->initw = wa->width;
+	c->inith = wa->height;
 
 	updatetitle(c); /* grabs title */
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) { /* if transient, it inherits tags+mon of parent */
@@ -1639,6 +1650,7 @@ manage(Window w, XWindowAttributes *wa)
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
 	configure(c); /* propagates border_width, if size doesn't change */
+	maybefloat(c); /* last chance to catch a late-arriving class hint before the notch would otherwise get created */
 	createnotch(c);
 	updatewindowtype(c);
 	updatesizehints(c);
