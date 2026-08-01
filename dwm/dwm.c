@@ -127,6 +127,7 @@ struct Client { /* a window that dwm is managing */
 	int premaxbw; /* border width before maximalist mode forced it to 0 (kept separate from oldbw, which fullscreen already uses) */
 	int nomaximalist; /* if 1, this client is fully excluded from maximalist mode (no floating force, no notch) */
 	int isshaded; /* rolled up to just the notch, client content unmapped */
+	int ignoreunmap; /* count of our own pending XUnmapWindow calls to not mistake for the client closing */
 	pid_t pid; /* pid of application in window - useful for swallowing */
 	Client *next; /* next client, in the linked list of all clients */
 	Client *snext; /* next in the STACK */
@@ -210,6 +211,7 @@ static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
 static void createnotch(Client *c);
+static void maybefloat(Client *c);
 static void destroynotify(XEvent *e);
 static void destroynotch(Client *c);
 static void detach(Client *c);
@@ -443,6 +445,54 @@ applyrules(Client *c)
 	if (ch.res_name)
 		XFree(ch.res_name);
 	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
+}
+
+/* Some apps (Qmmp among them) set WM_CLASS or WM_NAME after the window is
+ * already mapped, so applyrules() at manage()-time sees "broken" and never
+ * matches. Called again whenever those properties change, to catch it late. */
+void
+maybefloat(Client *c)
+{
+	const char *class, *instance;
+	unsigned int i;
+	const Rule *r;
+	XClassHint ch = { NULL, NULL };
+
+	if (c->isfloating)
+		return; /* rule already took effect, or the user floated it manually */
+
+	XGetClassHint(dpy, c->win, &ch);
+	class    = ch.res_class ? ch.res_class : broken;
+	instance = ch.res_name  ? ch.res_name  : broken;
+
+	for (i = 0; i < LENGTH(rules); i++) {
+		r = &rules[i];
+		if (r->isfloating
+		&& (!r->title || strstr(c->name, r->title))
+		&& (!r->class || strstr(class, r->class))
+		&& (!r->instance || strstr(instance, r->instance)))
+		{
+			c->isfloating = 1;
+			c->wasfloating = 1;
+			c->nomaximalist = r->nomaximalist;
+			if (r->staticlabel && !c->staticlabel) {
+				c->staticlabel = 1;
+				strncpy(c->notchlabel, r->staticlabel, sizeof c->notchlabel - 1);
+				c->notchlabel[sizeof c->notchlabel - 1] = '\0';
+			}
+			resize(c, c->x, c->y, c->w, c->h, 0);
+			if (!c->twin && !c->nomaximalist)
+				createnotch(c);
+			else if (c->twin && c->nomaximalist)
+				destroynotch(c);
+			arrange(c->mon);
+			break;
+		}
+	}
+	if (ch.res_class)
+		XFree(ch.res_class);
+	if (ch.res_name)
+		XFree(ch.res_name);
 }
 
 int
@@ -1776,6 +1826,9 @@ propertynotify(XEvent *e)
 			updatewmhints(c);
 			drawbars();
 			break;
+		case XA_WM_CLASS:
+			maybefloat(c); /* catches apps that set WM_CLASS after mapping */
+			break;
 		}
 		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName]) {
 			updatetitle(c);
@@ -1785,6 +1838,7 @@ propertynotify(XEvent *e)
 				strncpy(c->notchlabel, c->name, sizeof c->notchlabel - 1);
 				c->notchlabel[sizeof c->notchlabel - 1] = '\0';
 			}
+			maybefloat(c); /* catches title-based rules that also arrive late */
 			if (maximalistmode)
 				drawnotch(c);
 		}
@@ -2526,10 +2580,12 @@ toggleshade(Client *c)
 	if (!c->twin || c->isfullscreen)
 		return;
 	c->isshaded = !c->isshaded;
-	if (c->isshaded)
+	if (c->isshaded) {
+		c->ignoreunmap++;
 		XUnmapWindow(dpy, c->win);
-	else
+	} else {
 		XMapWindow(dpy, c->win);
+	}
 }
 
 void
@@ -2742,6 +2798,8 @@ unmapnotify(XEvent *e)
 	if ((c = wintoclient(ev->window))) {
 		if (ev->send_event)
 			setclientstate(c, WithdrawnState);
+		else if (c->ignoreunmap)
+			c->ignoreunmap--;
 		else
 			unmanage(c, 0);
 	}
