@@ -121,44 +121,31 @@ static const char *tags[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9"};
  * the wmgtemp/DockApp/etc rows) to fully exclude that app from Maximalist
  * Mode: no forced floating, no border change, no notch, ever. */
 static const Rule rules[] = {
-    {"Qmmp", "player", NULL, 0, 1, 0, 1, -1},
-
+    { .class = "Qmmp", .isfloating = 1, .monitor = -1, .nomaximalist = 1 },
     {"neofetch",          NULL,         "Welcome",      0, 1, 1, 0, -1},
     {"st-256color",       NULL,         NULL,           0, 0, 1, 0, -1},
     {"fzfmenu",           NULL,         NULL,           0, 1, 1, 1, -1},
     {"mpv",               NULL,         NULL,           0, 1, 0, 1, -1},
     {"Nsxiv",             NULL,         NULL,           0, 1, 0, 1, -1},
-
     {NULL, NULL, "Event Tester", 0, 0, 0, 1, -1},
     {NULL, NULL, "emacs-everywhere", 0, 1, 0, 1, -1},
-
     {"musicwiki", "musicwiki", NULL, 0, 1, -1},
     {"floating_script", NULL, NULL, 0, 1, -1},
     {"st-256color", NULL, "music-player", 0, 1, -1},
     {NULL, NULL, "CamPreview", 0, 1, -1},
-
     {"wal-picker", NULL, NULL, 0, 1, 0, 1, -1},
     {"clipboard-picker", NULL, NULL, 0, 1, 0, 1, -1},
-
     {"NULL", NULL, "Emacs Client", 0, 1, -1},
     {"app-launcher", NULL, NULL, 0, 1, 0, 1, -1},
     {"scratchpad", NULL, NULL, 0, 1, 1, 0, -1},
-
     {NULL, NULL, "Powermenu", 0, 1, -1},
-
     {"Music Preview", NULL, NULL, 0, 1, 0, 1, -1},
     {"Wallpaper Picker", NULL, NULL, 1, 0, -1},
-
-    {NULL, NULL, "Welcome", 0, 1, -1},
-
     {.class = "wmgtemp",   .isfloating = 1, .monitor = -1, .staticlabel = "TEMP"},
     {.class = "DockApp",   .isfloating = 1, .monitor = -1, .staticlabel = "DOCK"},
     {.class = "wmbattery", .isfloating = 1, .monitor = -1, .staticlabel = "BAT"},
     {.class = "WMClock",   .isfloating = 1, .monitor = -1, .staticlabel = "CLOCK"},
     {.class = "Dockapps",  .isfloating = 1, .monitor = -1, .staticlabel = "DOCKS"},
-
-    {"WorldPainter", NULL, NULL, 0, 1, -1},
-
     {"fzfmenu", NULL, NULL, 0, 1, 1, 1, -1},
     {"mpv", NULL, NULL, 0, 1, 0, 1, -1},
     {"Nsxiv", NULL, NULL, 0, 1, 0, 1, -1},

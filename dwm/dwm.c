@@ -126,6 +126,7 @@ struct Client { /* a window that dwm is managing */
 	int wasfloating; /* floating state before maximalist mode forced it, restored on toggle-off */
 	int premaxbw; /* border width before maximalist mode forced it to 0 (kept separate from oldbw, which fullscreen already uses) */
 	int nomaximalist; /* if 1, this client is fully excluded from maximalist mode (no floating force, no notch) */
+	int isshaded; /* rolled up to just the notch, client content unmapped */
 	pid_t pid; /* pid of application in window - useful for swallowing */
 	Client *next; /* next client, in the linked list of all clients */
 	Client *snext; /* next in the STACK */
@@ -285,7 +286,9 @@ static void togglefullscreen(const Arg *arg);
 static void togglemaximalist(const Arg *arg);
 static void spawnmaximalist(void);
 static void killmaximalist(void);
+static void restoremaximalist(void);
 static void togglesticky(const Arg *arg);
+static void toggleshade(Client *c);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
@@ -357,6 +360,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static Atom maximalistatom;
 static int maximalistmode = 0;
 static pid_t maximalistpid = -1;
 
@@ -606,6 +610,8 @@ buttonpress(XEvent *e)
 	Monitor *m;
 	XButtonPressedEvent *ev = &e->xbutton;
 	char *text, *s, ch;
+	static Client *lastnotchclient = NULL;
+	static Time lastnotchtime = 0;
 
 	click = ClkRootWin;
 	/* focus monitor if necessary */
@@ -618,10 +624,16 @@ buttonpress(XEvent *e)
 		focus(c); /* also switches selmon if c is on another monitor */
 		restack(c->mon);
 		if (ev->button == Button1) {
-			if (ev->x >= (int)c->w - bh)
+			if (ev->x >= (int)c->w - bh) {
 				killthis(c); /* close button */
-			else
+			} else if (c == lastnotchclient && ev->time - lastnotchtime < 400) {
+				toggleshade(c); /* double-click: roll up/down instead of dragging */
+				lastnotchclient = NULL;
+			} else {
+				lastnotchclient = c;
+				lastnotchtime = ev->time;
 				movemouse(&arg); /* icon slot and title area both drag the window */
+			}
 		}
 		return;
 	}
@@ -2159,6 +2171,7 @@ setup(void)
 	wmatom[WMDelete] = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
 	wmatom[WMState] = XInternAtom(dpy, "WM_STATE", False);
 	wmatom[WMTakeFocus] = XInternAtom(dpy, "WM_TAKE_FOCUS", False);
+	maximalistatom = XInternAtom(dpy, "_DWM_MAXIMALIST", False);
 	netatom[NetActiveWindow] = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", False);
 	netatom[NetSupported] = XInternAtom(dpy, "_NET_SUPPORTED", False);
 	netatom[NetWMName] = XInternAtom(dpy, "_NET_WM_NAME", False);
@@ -2508,6 +2521,18 @@ togglesticky(const Arg *arg)
 }
 
 void
+toggleshade(Client *c)
+{
+	if (!c->twin || c->isfullscreen)
+		return;
+	c->isshaded = !c->isshaded;
+	if (c->isshaded)
+		XUnmapWindow(dpy, c->win);
+	else
+		XMapWindow(dpy, c->win);
+}
+
+void
 togglefullscreen(const Arg *arg)
 {
 	if (selmon->sel){
@@ -2521,8 +2546,12 @@ togglemaximalist(const Arg *arg)
 	Client *c;
 	Monitor *m;
 	XWindowChanges wc;
+	long data;
 
 	maximalistmode = !maximalistmode;
+	data = maximalistmode;
+	XChangeProperty(dpy, root, maximalistatom, XA_CARDINAL, 32,
+		PropModeReplace, (unsigned char *)&data, 1);
 	if (maximalistmode)
 		spawnmaximalist();
 	else
@@ -2596,6 +2625,22 @@ killmaximalist(void)
 	kill(-maximalistpid, SIGTERM); /* setsid()'d, so this reaches its whole process group */
 	waitpid(maximalistpid, NULL, 0);
 	maximalistpid = -1;
+}
+
+void
+restoremaximalist(void)
+{
+	Atom type;
+	int format;
+	unsigned long nitems, extra;
+	unsigned char *data = NULL;
+
+	if (XGetWindowProperty(dpy, root, maximalistatom, 0, 1, False, XA_CARDINAL,
+		&type, &format, &nitems, &extra, &data) == Success && data) {
+		if (nitems && *(long *)data)
+			togglemaximalist(NULL); /* was on before the last restart: flip back on, same as a manual toggle */
+		XFree(data);
+	}
 }
 
 void
@@ -3241,6 +3286,7 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan(); /* see if other applications are already running */
+	restoremaximalist(); /* re-enable maximalist mode if it was on before a restart */
 	run(); /* main event loop of dwm -->
 * continuously listens to events from the X server (window changes, key presses, mouse) 
 * and sends them to the correct event handler */
